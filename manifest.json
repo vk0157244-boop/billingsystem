@@ -1,0 +1,16 @@
+{
+  "name": "Billing Management",
+  "short_name": "Billing Mgmt",
+  "description": "Offline billing, stock, and Khata credit ledger for store counters.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EFE6D0",
+  "theme_color": "#A23B34",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Billing Management</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#A23B34">
+<meta name="description" content="Offline billing, stock, and Khata credit ledger for store counters.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Billing Management">
+<style>
+  :root{
+    --bg:#EFE6D0;
+    --ink:#1F2A44;
+    --ink-soft:#6B6455;
+    --accent:#0F6B4C;
+    --accent-dark:#0B5039;
+    --amber:#C98A2C;
+    --amber-soft:#F5E9D3;
+    --rule-red:#A23B34;
+    --surface:#FFFDF7;
+    --line:#DDD3B8;
+    --danger:#B23A2E;
+    --danger-soft:#F6E4E1;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:
+      repeating-linear-gradient(180deg, transparent, transparent 27px, rgba(31,42,68,.045) 28px),
+      var(--bg);
+    color:var(--ink);font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:Georgia,'Iowan Old Style','Noto Serif',serif;font-weight:700;letter-spacing:-0.01em;margin:0;}
+  .mono{font-family:ui-monospace,'SFMono-Regular','Consolas','Liberation Mono',Menlo,monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+
+  /* ---------- App shell ---------- */
+  #app{max-width:1180px;margin:0 auto;padding:0 20px 60px;}
+  header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:22px 0 16px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .mark{width:46px;height:46px;border-radius:50%;border:2px solid var(--rule-red);outline:1px solid var(--rule-red);outline-offset:2px;color:var(--rule-red);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:13px;letter-spacing:.02em;transform:rotate(-8deg);flex-shrink:0;}
+  .brand h1{font-size:21px;letter-spacing:-0.01em;}
+  .brand .sub{font-size:11px;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
+
+  .day-strip{display:flex;gap:18px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);padding:0 2px 16px;}
+  .day-strip .dchip{display:flex;align-items:baseline;gap:5px;}
+  .day-strip .dchip b{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;color:var(--ink);font-size:14px;}
+  .day-strip .ddue{color:var(--rule-red);font-weight:600;}
+
+  nav.tabs{display:flex;gap:4px;background:#E7DCC0;padding:4px;border-radius:10px;}
+  nav.tabs button{border:none;background:transparent;padding:9px 16px;border-radius:7px;font-size:13.5px;font-weight:600;color:var(--ink-soft);transition:all .15s;}
+  nav.tabs button.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);position:relative;}
+  .panel.ledger{padding-left:14px;border-left:3px solid var(--rule-red);}
+
+  /* ---------- Billing layout ---------- */
+  .billing-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
+  @media (max-width:880px){.billing-grid{grid-template-columns:1fr;}}
+
+  .search-row{display:flex;gap:10px;margin-bottom:14px;}
+  .search-row input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface);}
+  .search-row input:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  .product-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s, transform .1s;position:relative;}
+  .product-card:hover{border-color:var(--accent);}
+  .product-card:active{transform:scale(.98);}
+  .product-card.out{opacity:.45;cursor:not-allowed;}
+  .product-card .pname{font-weight:600;font-size:14px;margin-bottom:6px;line-height:1.3;}
+  .product-card .pprice{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-size:15px;color:var(--accent-dark);font-weight:600;}
+  .product-card .pstock{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+  .product-card .pstock.low{color:var(--danger);font-weight:600;}
+  .empty-note{color:var(--ink-soft);font-size:13.5px;padding:30px 10px;text-align:center;}
+
+  /* ---------- Ticket / cart ---------- */
+  .ticket{position:sticky;top:20px;padding:0;overflow:hidden;border-left:3px solid var(--rule-red);}
+  .ticket-head{padding:18px 20px 14px;border-bottom:1px dashed var(--line);}
+  .ticket-head h2{font-size:16px;}
+  .ticket-head .meta{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .cust-input{width:100%;margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;}
+
+  .cart-items{max-height:280px;overflow-y:auto;padding:8px 20px;}
+  .cart-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .cart-row:last-child{border-bottom:none;}
+  .cart-row .ci-name{flex:1;font-size:13px;font-weight:500;}
+  .cart-row .ci-name .unit-price{display:block;font-size:11px;color:var(--ink-soft);font-weight:400;margin-top:1px;}
+  .qty-ctrl{display:flex;align-items:center;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .qty-ctrl button{width:22px;height:22px;border:none;background:#F1EFE7;font-size:14px;line-height:1;color:var(--ink);}
+  .qty-ctrl span{width:26px;text-align:center;font-size:12.5px;font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;}
+  .ci-total{width:64px;text-align:right;font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-size:13px;}
+  .ci-remove{border:none;background:none;color:var(--danger);font-size:15px;padding:2px 4px;}
+  .cart-empty{padding:28px 10px;text-align:center;color:var(--ink-soft);font-size:13px;}
+
+  .ticket-totals{padding:14px 20px 4px;border-top:1px dashed var(--line);}
+  .trow{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--ink-soft);}
+  .trow.grand{color:var(--ink);font-weight:700;font-size:17px;font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;padding-top:8px;border-top:1px solid var(--line);margin-top:4px;}
+  .rate-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink-soft);padding:4px 0;}
+  .rate-row input{width:56px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;font-size:12.5px;text-align:right;}
+
+  .ticket-actions{padding:16px 20px 20px;display:flex;gap:8px;}
+  .btn{border:none;border-radius:8px;padding:11px 16px;font-size:13.5px;font-weight:600;}
+  .btn-primary{background:var(--accent);color:#fff;flex:1;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-primary:disabled{background:#C9C4B3;cursor:not-allowed;}
+  .btn-ghost{background:#F1EFE7;color:var(--ink);}
+  .btn-danger{background:var(--danger-soft);color:var(--danger);}
+  .btn-small{padding:6px 10px;font-size:12px;border-radius:6px;}
+
+  /* zigzag receipt edge */
+  .ticket::after{content:"";display:block;height:14px;
+    background:linear-gradient(-45deg, var(--bg) 6px, transparent 0), linear-gradient(45deg, var(--bg) 6px, var(--surface) 0);
+    background-position:bottom left;background-size:14px 14px;background-repeat:repeat-x;}
+
+  /* ---------- Products view ---------- */
+  .products-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;}
+  .products-toolbar input{flex:1;max-width:320px;padding:10px 13px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;}
+  table.ptable{width:100%;border-collapse:collapse;font-size:13.5px;}
+  table.ptable th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);padding:10px 14px;border-bottom:1px solid var(--line);}
+  table.ptable td{padding:11px 14px;border-bottom:1px solid var(--line);}
+  table.ptable tr:last-child td{border-bottom:none;}
+  table.ptable td.num{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;}
+  .stock-badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+  .stock-badge.ok{background:#E4F2EA;color:var(--accent-dark);}
+  .stock-badge.low{background:var(--danger-soft);color:var(--danger);}
+  .row-actions{display:flex;gap:6px;}
+  .icon-btn{border:none;background:#F1EFE7;border-radius:6px;padding:6px 9px;font-size:12px;}
+  .icon-btn.del{background:var(--danger-soft);color:var(--danger);}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(28,35,33,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal{background:var(--surface);border-radius:12px;padding:26px;width:100%;max-width:400px;}
+  .modal h3{font-size:16px;margin-bottom:16px;}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  .field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;font-size:13.5px;}
+  .modal-actions{display:flex;gap:8px;margin-top:18px;}
+  .modal-actions .btn{flex:1;}
+
+  /* ---------- History ---------- */
+  .bill-card{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);cursor:pointer;}
+  .bill-card:last-child{border-bottom:none;}
+  .bill-card:hover{background:#FAF6E9;}
+  .bill-card .bnum{font-weight:600;font-size:13.5px;}
+  .bill-card .bmeta{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .bill-card .bamt{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-weight:600;font-size:14px;text-align:right;}
+  .khata-chip{display:inline-block;margin-top:3px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:20px;border:1px solid var(--amber);color:var(--amber);}
+
+  /* ---------- Khata (credit ledger) ---------- */
+  .pay-toggle{display:flex;gap:8px;margin-top:10px;}
+  .pay-toggle button{flex:1;padding:8px 10px;border-radius:7px;border:1.5px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+  .pay-toggle button.active{border-color:var(--accent);color:var(--accent-dark);background:#E9F3EC;}
+  .pay-toggle button.active.credit{border-color:var(--amber);color:#8A5C15;background:var(--amber-soft);}
+
+  .khata-summary{display:flex;gap:14px;padding:16px 18px;border-bottom:1px dashed var(--line);flex-wrap:wrap;}
+  .khata-summary .kstat{min-width:120px;}
+  .khata-summary .kstat .klabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);}
+  .khata-summary .kstat .kval{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-size:19px;font-weight:700;margin-top:2px;}
+  .khata-row{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line);}
+  .khata-row:last-child{border-bottom:none;}
+  .khata-row .kname{flex:1;}
+  .khata-row .kname .kn{font-weight:600;font-size:14px;}
+  .khata-row .kname .ksub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .khata-row .kdue{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-weight:700;font-size:15px;min-width:90px;text-align:right;}
+  .stamp{display:inline-flex;align-items:center;justify-content:center;border:2px solid;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transform:rotate(-4deg);font-family:Georgia,serif;}
+  .stamp.due{color:var(--rule-red);border-color:var(--rule-red);}
+  .stamp.clear{color:var(--accent-dark);border-color:var(--accent);}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:8px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.2);z-index:100;opacity:0;transition:opacity .25s;pointer-events:none;}
+  .toast.show{opacity:1;}
+
+  section.view{display:none;}
+  section.view.active{display:block;}
+
+  /* ---------- Printable receipt ---------- */
+  #printArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:14px;}
+    .rcpt-line{border-top:1px dashed #000;margin:8px 0;}
+  }
+  #printArea{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace,monospace;font-size:12.5px;color:#000;max-width:320px;}
+  #printArea h2{font-size:15px;text-align:center;margin-bottom:2px;}
+  #printArea .rcenter{text-align:center;font-size:11px;margin-bottom:2px;}
+  #printArea table{width:100%;border-collapse:collapse;margin:8px 0;}
+  #printArea td{padding:2px 0;font-size:12px;}
+  #printArea .r-right{text-align:right;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">CTR</div>
+      <div>
+        <h1 id="storeNameDisplay">Billing Management</h1>
+        <div class="sub">Billing · Stock · Khata · Offline</div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-view="billing">Billing</button>
+      <button class="tab-btn" data-view="products">Products</button>
+      <button class="tab-btn" data-view="khata">Khata</button>
+      <button class="tab-btn" data-view="history">History</button>
+    </nav>
+    <button class="btn btn-ghost btn-small" id="installBtn" style="display:none;">⬇ Install App</button>
+  </header>
+  <div class="day-strip" id="dayStrip"></div>
+
+  <!-- BILLING VIEW -->
+  <section class="view active" id="view-billing">
+    <div class="billing-grid">
+      <div>
+        <div class="search-row">
+          <input id="productSearch" type="text" placeholder="Search products to add…">
+        </div>
+        <div class="product-grid" id="productGrid"></div>
+      </div>
+
+      <div class="ticket panel">
+        <div class="ticket-head">
+          <h2>New Bill</h2>
+          <div class="meta" id="invoicePreview">Invoice —</div>
+          <input class="cust-input" id="custName" type="text" placeholder="Customer name (optional)">
+          <div class="pay-toggle">
+            <button type="button" class="pmode-btn active" data-mode="cash">Cash</button>
+            <button type="button" class="pmode-btn" data-mode="credit">Khata (Pay later)</button>
+          </div>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="ticket-totals">
+          <div class="trow"><span>Subtotal</span><span class="mono" id="subtotalVal">₹0.00</span></div>
+          <div class="rate-row">
+            <span>Tax</span>
+            <span><input id="taxRate" type="number" min="0" step="0.1" value="0"> %</span>
+          </div>
+          <div class="rate-row">
+            <span>Discount</span>
+            <span><input id="discRate" type="number" min="0" step="0.1" value="0"> %</span>
+          </div>
+          <div class="trow grand"><span>Total</span><span id="totalVal">₹0.00</span></div>
+        </div>
+        <div class="ticket-actions">
+          <button class="btn btn-ghost" id="clearBillBtn">Clear</button>
+          <button class="btn btn-primary" id="printBillBtn" disabled>Save & Print</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS VIEW -->
+  <section class="view" id="view-products">
+    <div class="products-toolbar">
+      <input id="prodTableSearch" type="text" placeholder="Search products…">
+      <button class="btn btn-primary" id="addProductBtn">+ Add product</button>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table class="ptable">
+        <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Unit</th><th></th></tr></thead>
+        <tbody id="productTableBody"></tbody>
+      </table>
+      <div class="empty-note" id="productsEmptyNote" style="display:none;">No products yet. Add your first one to get started.</div>
+    </div>
+  </section>
+
+  <!-- KHATA VIEW (credit ledger) -->
+  <section class="view" id="view-khata">
+    <div class="panel">
+      <div class="khata-summary" id="khataSummary"></div>
+      <div id="khataList">
+        <div class="empty-note" id="khataEmptyNote">No credit accounts yet. Choose "Khata (Pay later)" on a bill to start one.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY VIEW -->
+  <section class="view" id="view-history">
+    <div class="panel" id="historyList">
+      <div class="empty-note" id="historyEmptyNote">No bills yet. Bills you print will show up here.</div>
+    </div>
+  </section>
+</div>
+
+<!-- Add/Edit product modal -->
+<div class="overlay" id="productModal" style="display:none;">
+  <div class="modal">
+    <h3 id="productModalTitle">Add product</h3>
+    <div class="field"><label>Name</label><input id="pf-name" type="text" placeholder="e.g. Basmati Rice 1kg"></div>
+    <div class="field"><label>Price (₹)</label><input id="pf-price" type="number" min="0" step="0.01"></div>
+    <div class="field"><label>Stock quantity</label><input id="pf-stock" type="number" min="0" step="1"></div>
+    <div class="field"><label>Unit</label>
+      <select id="pf-unit">
+        <option>pcs</option><option>kg</option><option>g</option><option>l</option><option>ml</option><option>box</option><option>pack</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="pf-cancel">Cancel</button>
+      <button class="btn btn-primary" id="pf-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic amount-entry modal (used for restock + record payment) -->
+<div class="overlay" id="amountModal" style="display:none;">
+  <div class="modal">
+    <h3 id="amountModalTitle">Enter amount</h3>
+    <div class="field">
+      <label id="amountModalSubLabel">Item</label>
+      <div id="amountModalSub" style="font-weight:600;font-size:14px;padding:4px 0 2px;"></div>
+    </div>
+    <div class="field"><label id="amountFieldLabel">Amount</label><input id="am-value" type="number" min="0" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="am-cancel">Cancel</button>
+      <button class="btn btn-primary" id="am-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic confirm modal (used for delete actions) -->
+<div class="overlay" id="confirmModal" style="display:none;">
+  <div class="modal">
+    <h3 id="confirmModalTitle">Are you sure?</h3>
+    <div id="confirmModalBody" style="font-size:13.5px;color:var(--ink-soft);"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cf-cancel">Cancel</button>
+      <button class="btn btn-danger" id="cf-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Printable receipt template -->
+<div id="printArea">
+  <h2 id="pr-store">Counter</h2>
+  <div class="rcenter" id="pr-invoice"></div>
+  <div class="rcenter" id="pr-date"></div>
+  <div class="rcpt-line"></div>
+  <div class="rcenter" id="pr-cust" style="display:none;"></div>
+  <table id="pr-items"></table>
+  <div class="rcpt-line"></div>
+  <table id="pr-totals"></table>
+  <div class="rcpt-line"></div>
+  <div class="rcenter">Thank you for shopping with us</div>
+</div>
+
+<script>
+(function(){
+  const CURRENCY = "₹";
+  let products = [];
+  let bills = [];
+  let khata = {}; // { customerName: { credit: number, paid: number } }
+  let cart = []; // {productId, name, price, qty}
+  let editingProductId = null;
+  let payMode = 'cash';
+
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const fmt = n => CURRENCY + (Math.round(n*100)/100).toFixed(2);
+
+  function toast(msg){
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- storage (browser localStorage — fully offline, no network needed) ----------
+  function loadData(){
+    try{
+      const p = localStorage.getItem('counter_products');
+      products = p ? JSON.parse(p) : [];
+    }catch(e){ products = []; }
+    try{
+      const b = localStorage.getItem('counter_bills');
+      bills = b ? JSON.parse(b) : [];
+    }catch(e){ bills = []; }
+    try{
+      const k = localStorage.getItem('counter_khata');
+      khata = k ? JSON.parse(k) : {};
+    }catch(e){ khata = {}; }
+    renderProductGrid();
+    renderProductTable();
+    renderHistory();
+    renderKhata();
+    renderDayStrip();
+  }
+  function saveProducts(){
+    try{ localStorage.setItem('counter_products', JSON.stringify(products)); }
+    catch(e){ toast('Could not save products (storage may be full)'); }
+  }
+  function saveBills(){
+    try{ localStorage.setItem('counter_bills', JSON.stringify(bills)); }
+    catch(e){ toast('Could not save bill (storage may be full)'); }
+  }
+  function saveKhata(){
+    try{ localStorage.setItem('counter_khata', JSON.stringify(khata)); }
+    catch(e){ toast('Could not save khata (storage may be full)'); }
+  }
+
+  // ---------- tabs ----------
+  $$('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      $$('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      $$('.view').forEach(v=>v.classList.remove('active'));
+      $('#view-'+btn.dataset.view).classList.add('active');
+      if(btn.dataset.view==='products') renderProductTable();
+      if(btn.dataset.view==='history') renderHistory();
+      if(btn.dataset.view==='khata') renderKhata();
+    });
+  });
+
+  // ---------- payment mode toggle (Cash / Khata) ----------
+  $$('.pmode-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      payMode = btn.dataset.mode;
+      $$('.pmode-btn').forEach(b=>b.classList.remove('active','credit'));
+      btn.classList.add('active');
+      if(payMode==='credit') btn.classList.add('credit');
+    });
+  });
+
+  // ---------- today's sales strip ----------
+  function renderDayStrip(){
+    const strip = $('#dayStrip');
+    const todayStr = new Date().toDateString();
+    const todays = bills.filter(b=> new Date(b.date).toDateString()===todayStr);
+    const todayTotal = todays.reduce((s,b)=>s+b.total,0);
+    const totalDue = Object.values(khata).reduce((s,k)=> s + Math.max(0,k.credit-k.paid), 0);
+    strip.innerHTML = `
+      <div class="dchip">Today's sales <b>${fmt(todayTotal)}</b></div>
+      <div class="dchip">Bills today <b>${todays.length}</b></div>
+      <div class="dchip">Khata outstanding <b class="ddue">${fmt(totalDue)}</b></div>
+    `;
+  }
+
+
+
+  // ---------- product grid (billing side) ----------
+  function renderProductGrid(){
+    const q = ($('#productSearch').value||'').toLowerCase();
+    const grid = $('#productGrid');
+    const list = products.filter(p=>p.name.toLowerCase().includes(q));
+    if(list.length===0){
+      grid.innerHTML = `<div class="empty-note">${products.length===0 ? 'No products yet — add some in the Products tab.' : 'No matches.'}</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(p=>{
+      const out = p.stock<=0;
+      const low = !out && p.stock<=5;
+      return `<div class="product-card ${out?'out':''}" data-id="${p.id}">
+        <div class="pname">${escapeHtml(p.name)}</div>
+        <div class="pprice">${fmt(p.price)}</div>
+        <div class="pstock ${low?'low':''}">${out? 'Out of stock' : p.stock+' '+p.unit+' left'}</div>
+      </div>`;
+    }).join('');
+    $$('.product-card').forEach(card=>{
+      if(card.classList.contains('out')) return;
+      card.addEventListener('click', ()=> addToCart(card.dataset.id));
+    });
+  }
+  $('#productSearch').addEventListener('input', renderProductGrid);
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- cart ----------
+  function addToCart(productId){
+    const p = products.find(x=>x.id===productId);
+    if(!p || p.stock<=0) return;
+    const existing = cart.find(c=>c.productId===productId);
+    const inCart = existing? existing.qty : 0;
+    if(inCart >= p.stock){ toast('No more stock available'); return; }
+    if(existing){ existing.qty++; }
+    else { cart.push({productId:p.id, name:p.name, price:p.price, qty:1}); }
+    renderCart();
+  }
+  function changeQty(productId, delta){
+    const item = cart.find(c=>c.productId===productId);
+    if(!item) return;
+    const p = products.find(x=>x.id===productId);
+    const newQty = item.qty + delta;
+    if(newQty<=0){ cart = cart.filter(c=>c.productId!==productId); }
+    else if(p && newQty>p.stock){ toast('No more stock available'); return; }
+    else{ item.qty = newQty; }
+    renderCart();
+  }
+  function removeFromCart(productId){
+    cart = cart.filter(c=>c.productId!==productId);
+    renderCart();
+  }
+
+  function computeTotals(){
+    const subtotal = cart.reduce((s,c)=>s + c.price*c.qty, 0);
+    const taxRate = parseFloat($('#taxRate').value)||0;
+    const discRate = parseFloat($('#discRate').value)||0;
+    const discAmt = subtotal * discRate/100;
+    const taxable = subtotal - discAmt;
+    const taxAmt = taxable * taxRate/100;
+    const total = taxable + taxAmt;
+    return {subtotal, discRate, discAmt, taxRate, taxAmt, total};
+  }
+
+  function renderCart(){
+    const wrap = $('#cartItems');
+    if(cart.length===0){
+      wrap.innerHTML = `<div class="cart-empty">Tap a product to add it to the bill.</div>`;
+    } else {
+      wrap.innerHTML = cart.map(c=>`
+        <div class="cart-row" data-id="${c.productId}">
+          <div class="ci-name">${escapeHtml(c.name)}<span class="unit-price">${fmt(c.price)} each</span></div>
+          <div class="qty-ctrl">
+            <button class="qminus">−</button>
+            <span>${c.qty}</span>
+            <button class="qplus">+</button>
+          </div>
+          <div class="ci-total mono">${fmt(c.price*c.qty)}</div>
+          <button class="ci-remove" title="Remove">✕</button>
+        </div>`).join('');
+      $$('.qminus').forEach(b=>b.addEventListener('click', e=>changeQty(e.target.closest('.cart-row').dataset.id, -1)));
+      $$('.qplus').forEach(b=>b.addEventListener('click', e=>changeQty(e.target.closest('.cart-row').dataset.id, 1)));
+      $$('.ci-remove').forEach(b=>b.addEventListener('click', e=>removeFromCart(e.target.closest('.cart-row').dataset.id)));
+    }
+    const t = computeTotals();
+    $('#subtotalVal').textContent = fmt(t.subtotal);
+    $('#totalVal').textContent = fmt(t.total);
+    $('#printBillBtn').disabled = cart.length===0;
+    $('#invoicePreview').textContent = 'Invoice #' + String(bills.length+1).padStart(4,'0');
+  }
+  $('#taxRate').addEventListener('input', renderCart);
+  $('#discRate').addEventListener('input', renderCart);
+  $('#clearBillBtn').addEventListener('click', ()=>{
+    cart = []; $('#custName').value=''; $('#taxRate').value=0; $('#discRate').value=0;
+    payMode='cash'; $$('.pmode-btn').forEach(b=>b.classList.remove('active','credit'));
+    $('.pmode-btn[data-mode="cash"]').classList.add('active');
+    renderCart();
+  });
+
+  // ---------- print & save bill ----------
+  $('#printBillBtn').addEventListener('click', async ()=>{
+    if(cart.length===0) return;
+    const custName = $('#custName').value.trim();
+    if(payMode==='credit' && !custName){ toast('Enter a customer name for Khata bills'); return; }
+    // validate stock again
+    for(const c of cart){
+      const p = products.find(x=>x.id===c.productId);
+      if(!p || p.stock < c.qty){ toast(`Not enough stock for ${c.name}`); return; }
+    }
+    const t = computeTotals();
+    const invoiceNum = String(bills.length+1).padStart(4,'0');
+    const bill = {
+      id: uid(),
+      invoice: invoiceNum,
+      date: new Date().toISOString(),
+      customer: custName,
+      mode: payMode,
+      items: cart.map(c=>({name:c.name, price:c.price, qty:c.qty, total:c.price*c.qty})),
+      subtotal: t.subtotal, taxRate: t.taxRate, taxAmt: t.taxAmt,
+      discRate: t.discRate, discAmt: t.discAmt, total: t.total
+    };
+    // deduct stock
+    cart.forEach(c=>{
+      const p = products.find(x=>x.id===c.productId);
+      if(p) p.stock -= c.qty;
+    });
+    bills.unshift(bill);
+    if(payMode==='credit'){
+      if(!khata[custName]) khata[custName] = {credit:0, paid:0};
+      khata[custName].credit += t.total;
+      await saveKhata();
+    }
+    await saveProducts();
+    await saveBills();
+    renderProductGrid();
+    renderProductTable();
+    renderHistory();
+    renderKhata();
+    renderDayStrip();
+    printBill(bill);
+    cart = []; $('#custName').value=''; $('#taxRate').value=0; $('#discRate').value=0;
+    payMode='cash'; $$('.pmode-btn').forEach(b=>b.classList.remove('active','credit'));
+    $('.pmode-btn[data-mode="cash"]').classList.add('active');
+    renderCart();
+    toast(payMode==='credit' ? 'Bill added to Khata' : 'Bill saved');
+  });
+
+  function printBill(bill){
+    $('#pr-store').textContent = $('#storeNameDisplay').textContent;
+    $('#pr-invoice').textContent = 'Invoice #' + bill.invoice;
+    $('#pr-date').textContent = new Date(bill.date).toLocaleString();
+    if(bill.customer){ $('#pr-cust').style.display='block'; $('#pr-cust').textContent = 'Customer: ' + bill.customer + (bill.mode==='credit' ? '  (KHATA — pay later)' : ''); }
+    else { $('#pr-cust').style.display='none'; }
+    $('#pr-items').innerHTML = bill.items.map(it=>`
+      <tr><td colspan="2">${escapeHtml(it.name)}</td></tr>
+      <tr><td>${it.qty} x ${fmt(it.price)}</td><td class="r-right">${fmt(it.total)}</td></tr>
+    `).join('');
+    let totalsRows = `<tr><td>Subtotal</td><td class="r-right">${fmt(bill.subtotal)}</td></tr>`;
+    if(bill.discRate>0) totalsRows += `<tr><td>Discount (${bill.discRate}%)</td><td class="r-right">-${fmt(bill.discAmt)}</td></tr>`;
+    if(bill.taxRate>0) totalsRows += `<tr><td>Tax (${bill.taxRate}%)</td><td class="r-right">${fmt(bill.taxAmt)}</td></tr>`;
+    totalsRows += `<tr><td style="font-weight:700;">Total</td><td class="r-right" style="font-weight:700;">${fmt(bill.total)}</td></tr>`;
+    $('#pr-totals').innerHTML = totalsRows;
+    window.print();
+  }
+
+  // ---------- product management ----------
+  function renderProductTable(){
+    const q = ($('#prodTableSearch').value||'').toLowerCase();
+    const body = $('#productTableBody');
+    const list = products.filter(p=>p.name.toLowerCase().includes(q));
+    $('#productsEmptyNote').style.display = products.length===0 ? 'block' : 'none';
+    body.innerHTML = list.map(p=>{
+      const low = p.stock<=5;
+      return `<tr data-id="${p.id}">
+        <td>${escapeHtml(p.name)}</td>
+        <td class="num">${fmt(p.price)}</td>
+        <td><span class="stock-badge ${low?'low':'ok'}">${p.stock} ${p.unit}</span></td>
+        <td>${p.unit}</td>
+        <td>
+          <div class="row-actions">
+            <button class="icon-btn restock-p">+ Stock</button>
+            <button class="icon-btn edit-p">Edit</button>
+            <button class="icon-btn del del-p">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+    $$('.restock-p').forEach(b=>b.addEventListener('click', e=>restockProduct(e.target.closest('tr').dataset.id)));
+    $$('.edit-p').forEach(b=>b.addEventListener('click', e=>openProductModal(e.target.closest('tr').dataset.id)));
+    $$('.del-p').forEach(b=>b.addEventListener('click', e=>deleteProduct(e.target.closest('tr').dataset.id)));
+  }
+  $('#prodTableSearch').addEventListener('input', renderProductTable);
+
+  function restockProduct(id){
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    openAmountModal({
+      title: 'Add stock',
+      subLabel: 'Product',
+      subValue: `${p.name} · Current stock: ${p.stock} ${p.unit}`,
+      fieldLabel: `Quantity to add (${p.unit})`,
+      onSave: (amount)=>{
+        const qty = Math.round(amount);
+        if(qty<=0){ toast('Enter a valid quantity'); return; }
+        p.stock += qty;
+        saveProducts();
+        renderProductTable();
+        renderProductGrid();
+        toast(`Added ${qty} ${p.unit} — new stock: ${p.stock}`);
+      }
+    });
+  }
+
+  // ---------- generic amount-entry modal (record payment / restock) ----------
+  let amountModalCallback = null;
+  function openAmountModal({title, subLabel, subValue, fieldLabel, onSave}){
+    $('#amountModalTitle').textContent = title;
+    $('#amountModalSubLabel').textContent = subLabel;
+    $('#amountModalSub').textContent = subValue;
+    $('#amountFieldLabel').textContent = fieldLabel;
+    $('#am-value').value = '';
+    amountModalCallback = onSave;
+    $('#amountModal').style.display = 'flex';
+    setTimeout(()=>$('#am-value').focus(), 0);
+  }
+  function closeAmountModal(){ $('#amountModal').style.display = 'none'; amountModalCallback = null; }
+  $('#am-cancel').addEventListener('click', closeAmountModal);
+  $('#amountModal').addEventListener('click', e=>{ if(e.target.id==='amountModal') closeAmountModal(); });
+  $('#am-value').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#am-save').click(); });
+  $('#am-save').addEventListener('click', ()=>{
+    const val = parseFloat($('#am-value').value);
+    if(isNaN(val) || val<=0){ toast('Enter a valid amount'); return; }
+    const cb = amountModalCallback;
+    closeAmountModal();
+    if(cb) cb(val);
+  });
+
+  // ---------- generic confirm modal (delete actions) ----------
+  let confirmModalCallback = null;
+  function openConfirmModal({title, body, onConfirm}){
+    $('#confirmModalTitle').textContent = title;
+    $('#confirmModalBody').textContent = body;
+    confirmModalCallback = onConfirm;
+    $('#confirmModal').style.display = 'flex';
+  }
+  function closeConfirmModal(){ $('#confirmModal').style.display = 'none'; confirmModalCallback = null; }
+  $('#cf-cancel').addEventListener('click', closeConfirmModal);
+  $('#confirmModal').addEventListener('click', e=>{ if(e.target.id==='confirmModal') closeConfirmModal(); });
+  $('#cf-ok').addEventListener('click', ()=>{
+    const cb = confirmModalCallback;
+    closeConfirmModal();
+    if(cb) cb();
+  });
+
+  function openProductModal(productId){
+    editingProductId = productId || null;
+    const p = productId ? products.find(x=>x.id===productId) : null;
+    $('#productModalTitle').textContent = p ? 'Edit product' : 'Add product';
+    $('#pf-name').value = p ? p.name : '';
+    $('#pf-price').value = p ? p.price : '';
+    $('#pf-stock').value = p ? p.stock : '';
+    $('#pf-unit').value = p ? p.unit : 'pcs';
+    $('#productModal').style.display = 'flex';
+    $('#pf-name').focus();
+  }
+  $('#addProductBtn').addEventListener('click', ()=>openProductModal(null));
+  $('#pf-cancel').addEventListener('click', ()=> $('#productModal').style.display='none');
+  $('#productModal').addEventListener('click', e=>{ if(e.target.id==='productModal') $('#productModal').style.display='none'; });
+
+  $('#pf-save').addEventListener('click', async ()=>{
+    const name = $('#pf-name').value.trim();
+    const price = parseFloat($('#pf-price').value);
+    const stock = parseInt($('#pf-stock').value);
+    const unit = $('#pf-unit').value;
+    if(!name){ toast('Enter a product name'); return; }
+    if(isNaN(price) || price<0){ toast('Enter a valid price'); return; }
+    if(isNaN(stock) || stock<0){ toast('Enter a valid stock quantity'); return; }
+    if(editingProductId){
+      const p = products.find(x=>x.id===editingProductId);
+      p.name=name; p.price=price; p.stock=stock; p.unit=unit;
+    } else {
+      products.push({id: uid(), name, price, stock, unit});
+    }
+    await saveProducts();
+    $('#productModal').style.display='none';
+    renderProductTable();
+    renderProductGrid();
+    toast('Product saved');
+  });
+
+  function deleteProduct(id){
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    openConfirmModal({
+      title: 'Delete product?',
+      body: `"${p.name}" will be removed from your product list. This can't be undone.`,
+      onConfirm: async ()=>{
+        products = products.filter(x=>x.id!==id);
+        await saveProducts();
+        renderProductTable();
+        renderProductGrid();
+        toast('Product deleted');
+      }
+    });
+  }
+
+  // ---------- history ----------
+  function renderHistory(){
+    const wrap = $('#historyList');
+    if(bills.length===0){
+      wrap.innerHTML = `<div class="empty-note" id="historyEmptyNote">No bills yet. Bills you print will show up here.</div>`;
+      return;
+    }
+    wrap.innerHTML = bills.map(b=>`
+      <div class="bill-card" data-id="${b.id}">
+        <div>
+          <div class="bnum">Invoice #${b.invoice}${b.customer? ' · '+escapeHtml(b.customer):''}</div>
+          <div class="bmeta">${new Date(b.date).toLocaleString()} · ${b.items.length} item(s)</div>
+          ${b.mode==='credit' ? '<span class="khata-chip">Khata</span>' : ''}
+        </div>
+        <div class="bamt">${fmt(b.total)}</div>
+      </div>
+    `).join('');
+    $$('.bill-card').forEach(el=>el.addEventListener('click', ()=>{
+      const bill = bills.find(b=>b.id===el.dataset.id);
+      if(bill) printBill(bill);
+    }));
+  }
+
+  // ---------- khata (credit ledger) ----------
+  function renderKhata(){
+    const names = Object.keys(khata);
+    const totalCredit = names.reduce((s,n)=>s+khata[n].credit,0);
+    const totalPaid = names.reduce((s,n)=>s+khata[n].paid,0);
+    const totalDue = totalCredit - totalPaid;
+    $('#khataSummary').innerHTML = `
+      <div class="kstat"><div class="klabel">Total credit given</div><div class="kval">${fmt(totalCredit)}</div></div>
+      <div class="kstat"><div class="klabel">Total received</div><div class="kval">${fmt(totalPaid)}</div></div>
+      <div class="kstat"><div class="klabel">Outstanding due</div><div class="kval" style="color:var(--rule-red)">${fmt(totalDue)}</div></div>
+    `;
+    const wrap = $('#khataList');
+    if(names.length===0){
+      wrap.innerHTML = `<div class="empty-note" id="khataEmptyNote">No credit accounts yet. Choose "Khata (Pay later)" on a bill to start one.</div>`;
+      return;
+    }
+    const sorted = names.slice().sort((a,b)=> (khata[b].credit-khata[b].paid) - (khata[a].credit-khata[a].paid));
+    wrap.innerHTML = sorted.map(n=>{
+      const due = khata[n].credit - khata[n].paid;
+      return `<div class="khata-row" data-name="${escapeHtml(n)}">
+        <div class="kname">
+          <div class="kn">${escapeHtml(n)}</div>
+          <div class="ksub">Credit ${fmt(khata[n].credit)} · Paid ${fmt(khata[n].paid)}</div>
+        </div>
+        <div class="kdue">${fmt(due)}</div>
+        ${due>0
+          ? `<span class="stamp due">Due</span><button class="btn btn-ghost btn-small pay-p">Record payment</button>`
+          : `<span class="stamp clear">Cleared</span>`}
+      </div>`;
+    }).join('');
+    $$('.pay-p').forEach(b=>b.addEventListener('click', e=>recordPayment(e.target.closest('.khata-row').dataset.name)));
+  }
+
+  function recordPayment(name){
+    const due = khata[name].credit - khata[name].paid;
+    openAmountModal({
+      title: 'Record payment',
+      subLabel: 'Customer',
+      subValue: `${name} · Current due: ${fmt(due)}`,
+      fieldLabel: 'Amount received (₹)',
+      onSave: (amount)=>{
+        khata[name].paid += Math.min(amount, due);
+        saveKhata();
+        renderKhata();
+        renderDayStrip();
+        toast(`Recorded ${fmt(amount)} from ${name}`);
+      }
+    });
+  }
+
+  // ---------- PWA: service worker + install prompt ----------
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    });
+  }
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    $('#installBtn').style.display = 'inline-block';
+  });
+  $('#installBtn').addEventListener('click', async ()=>{
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    $('#installBtn').style.display = 'none';
+  });
+  window.addEventListener('appinstalled', ()=>{
+    $('#installBtn').style.display = 'none';
+    toast('Counter installed');
+  });
+
+  // init
+  renderCart();
+  loadData();
+})();
+</script>
+</body>
+</html>

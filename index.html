@@ -170,12 +170,23 @@
   .khata-summary .kstat{min-width:120px;}
   .khata-summary .kstat .klabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);}
   .khata-summary .kstat .kval{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-size:19px;font-weight:700;margin-top:2px;}
-  .khata-row{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line);}
-  .khata-row:last-child{border-bottom:none;}
-  .khata-row .kname{flex:1;}
-  .khata-row .kname .kn{font-weight:600;font-size:14px;}
-  .khata-row .kname .ksub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
-  .khata-row .kdue{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-weight:700;font-size:15px;min-width:90px;text-align:right;}
+  .khata-folder{border-bottom:1px solid var(--line);}
+  .khata-folder:last-child{border-bottom:none;}
+  .khata-folder-header{display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;user-select:none;flex-wrap:wrap;}
+  .khata-folder-header:hover{background:#FAF6E9;}
+  .khata-folder-header .folder-icon{font-size:11px;color:var(--rule-red);width:12px;flex-shrink:0;}
+  .khata-folder-header .kname{flex:1;min-width:120px;}
+  .khata-folder-header .kname .kn{font-weight:600;font-size:14px;}
+  .khata-folder-header .kname .ksub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .khata-folder-header .kdue{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-weight:700;font-size:15px;min-width:80px;text-align:right;}
+  .khata-folder-body{padding:2px 18px 16px 42px;border-top:1px dashed var(--line);background:#FBF7EC;}
+  .khata-subhead{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);font-weight:700;margin:12px 0 4px;}
+  .khata-entry{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .khata-entry:last-child{border-bottom:none;}
+  .khata-entry-date{color:var(--ink-soft);font-size:11px;margin-left:6px;}
+  .khata-entry-amt{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-weight:600;}
+  .khata-entry-amt.paid{color:var(--accent-dark);}
+  .khata-entry-empty{font-size:12px;color:var(--ink-soft);padding:6px 0;}
   .stamp{display:inline-flex;align-items:center;justify-content:center;border:2px solid;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transform:rotate(-4deg);font-family:Georgia,serif;}
   .stamp.due{color:var(--rule-red);border-color:var(--rule-red);}
   .stamp.clear{color:var(--accent-dark);border-color:var(--accent);}
@@ -187,19 +198,20 @@
   section.view.active{display:block;}
 
   /* ---------- Printable receipt ---------- */
-  #printArea{display:none;}
+  #printArea, #printSlip{display:none;}
   @media print{
     body *{visibility:hidden;}
-    #printArea, #printArea *{visibility:visible;}
-    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:14px;}
+    #printArea.active-print, #printArea.active-print *,
+    #printSlip.active-print, #printSlip.active-print *{visibility:visible;}
+    #printArea.active-print, #printSlip.active-print{display:block;position:absolute;top:0;left:0;width:100%;padding:14px;}
     .rcpt-line{border-top:1px dashed #000;margin:8px 0;}
   }
-  #printArea{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace,monospace;font-size:12.5px;color:#000;max-width:320px;}
-  #printArea h2{font-size:15px;text-align:center;margin-bottom:2px;}
-  #printArea .rcenter{text-align:center;font-size:11px;margin-bottom:2px;}
-  #printArea table{width:100%;border-collapse:collapse;margin:8px 0;}
-  #printArea td{padding:2px 0;font-size:12px;}
-  #printArea .r-right{text-align:right;}
+  #printArea, #printSlip{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace,monospace;font-size:12.5px;color:#000;max-width:320px;}
+  #printArea h2, #printSlip h2{font-size:15px;text-align:center;margin-bottom:2px;}
+  #printArea .rcenter, #printSlip .rcenter{text-align:center;font-size:11px;margin-bottom:2px;}
+  #printArea table, #printSlip table{width:100%;border-collapse:collapse;margin:8px 0;}
+  #printArea td, #printSlip td{padding:2px 0;font-size:12px;}
+  #printArea .r-right, #printSlip .r-right{text-align:right;}
 </style>
 </head>
 <body>
@@ -377,6 +389,23 @@
   <table id="pr-totals"></table>
   <div class="rcpt-line"></div>
   <div class="rcenter">Thank you for shopping with us</div>
+</div>
+
+<!-- Printable Khata payment slip -->
+<div id="printSlip">
+  <h2 id="ks-store">Counter</h2>
+  <div class="rcenter" id="ks-address" style="display:none;"></div>
+  <div class="rcenter" id="ks-phone" style="display:none;"></div>
+  <div class="rcenter" style="font-weight:700;margin-top:6px;">KHATA PAYMENT RECEIPT</div>
+  <div class="rcenter" id="ks-date"></div>
+  <div class="rcpt-line"></div>
+  <div class="rcenter" id="ks-customer" style="font-weight:700;"></div>
+  <div id="ks-items-wrap"></div>
+  <div class="rcpt-line"></div>
+  <table id="ks-rows"></table>
+  <div class="rcenter" id="ks-status" style="font-weight:700;margin-top:6px;"></div>
+  <div class="rcpt-line"></div>
+  <div class="rcenter" id="ks-note"></div>
 </div>
 
 <script>
@@ -719,6 +748,50 @@
     if(bill.taxRate>0) totalsRows += `<tr><td>Tax (${bill.taxRate}%)</td><td class="r-right">${fmt(bill.taxAmt)}</td></tr>`;
     totalsRows += `<tr><td style="font-weight:700;">Total</td><td class="r-right" style="font-weight:700;">${fmt(bill.total)}</td></tr>`;
     $('#pr-totals').innerHTML = totalsRows;
+    $('#printSlip').classList.remove('active-print');
+    $('#printArea').classList.add('active-print');
+    window.print();
+  }
+
+  // ---------- Khata payment slip (printed every time a payment is recorded) ----------
+  function printPaymentSlip({name, amount, previousDue, remainingDue, date}){
+    $('#ks-store').textContent = shopInfo.name || $('#storeNameDisplay').textContent;
+    if(shopInfo.address){ $('#ks-address').style.display='block'; $('#ks-address').textContent = shopInfo.address; }
+    else { $('#ks-address').style.display='none'; }
+    if(shopInfo.phone){ $('#ks-phone').style.display='block'; $('#ks-phone').textContent = 'Ph: ' + shopInfo.phone; }
+    else { $('#ks-phone').style.display='none'; }
+    $('#ks-date').textContent = new Date(date).toLocaleString();
+    $('#ks-customer').textContent = name;
+
+    // List every product bought on credit by this customer, so the slip doubles as a mini-statement.
+    const purchases = bills.filter(b=>b.customer===name && b.mode==='credit').slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
+    let itemsHtml = '';
+    if(purchases.length){
+      itemsHtml += `<div class="rcpt-line"></div><div class="rcenter" style="font-weight:700;">Items purchased on credit</div><table>`;
+      purchases.forEach(b=>{
+        itemsHtml += `<tr><td colspan="2" style="padding-top:6px;font-weight:700;">Invoice #${b.invoice} · ${new Date(b.date).toLocaleDateString()}</td></tr>`;
+        b.items.forEach(it=>{
+          itemsHtml += `<tr><td>${escapeHtml(it.name)} (${formatQty(it.qty)} ${it.unit||''})</td><td class="r-right">${fmt(it.total)}</td></tr>`;
+        });
+      });
+      itemsHtml += `</table>`;
+    }
+    $('#ks-items-wrap').innerHTML = itemsHtml;
+
+    const remaining = Math.max(0, remainingDue);
+    const paidInFull = remaining <= 0;
+    $('#ks-rows').innerHTML = `
+      <tr><td>Previous due</td><td class="r-right">${fmt(previousDue)}</td></tr>
+      <tr><td style="font-weight:700;">Amount received</td><td class="r-right" style="font-weight:700;">${fmt(amount)}</td></tr>
+      <tr><td style="font-weight:700;">Remaining due</td><td class="r-right" style="font-weight:700;">${fmt(remaining)}</td></tr>
+    `;
+    $('#ks-status').textContent = paidInFull ? '✔ PAYMENT RECEIVED — ACCOUNT FULLY PAID' : 'PAYMENT RECEIVED — BALANCE CARRIED FORWARD';
+    $('#ks-note').textContent = paidInFull
+      ? 'Thank you — this Khata account is now fully settled.'
+      : 'Thank you — please retain this slip as proof of payment.';
+
+    $('#printArea').classList.remove('active-print');
+    $('#printSlip').classList.add('active-print');
     window.print();
   }
 
@@ -977,6 +1050,8 @@
   $('#historySearch').addEventListener('input', renderHistory);
 
   // ---------- khata (credit ledger) ----------
+  let openKhataFolders = new Set();
+
   function renderKhata(){
     const names = Object.keys(khata);
     const totalCredit = names.reduce((s,n)=>s+khata[n].credit,0);
@@ -994,19 +1069,60 @@
     }
     const sorted = names.slice().sort((a,b)=> (khata[b].credit-khata[b].paid) - (khata[a].credit-khata[a].paid));
     wrap.innerHTML = sorted.map(n=>{
-      const due = khata[n].credit - khata[n].paid;
-      return `<div class="khata-row" data-name="${escapeHtml(n)}">
-        <div class="kname">
-          <div class="kn">${escapeHtml(n)}</div>
-          <div class="ksub">Credit ${fmt(khata[n].credit)} · Paid ${fmt(khata[n].paid)}</div>
+      const acc = khata[n];
+      const due = acc.credit - acc.paid;
+      const isOpen = openKhataFolders.has(n);
+      const purchases = bills.filter(b=>b.customer===n && b.mode==='credit').slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
+      const payments = (acc.payments||[]).slice().sort((a,b)=> new Date(b.date)-new Date(a.date));
+      return `<div class="khata-folder">
+        <div class="khata-folder-header" data-name="${escapeHtml(n)}">
+          <span class="folder-icon">${isOpen?'▾':'▸'}</span>
+          <div class="kname">
+            <div class="kn">${escapeHtml(n)}</div>
+            <div class="ksub">Credit ${fmt(acc.credit)} · Paid ${fmt(acc.paid)}</div>
+          </div>
+          <div class="kdue">${fmt(due)}</div>
+          ${due>0 ? '<span class="stamp due">Due</span>' : '<span class="stamp clear">Cleared</span>'}
+          ${due>0 ? `<button class="btn btn-ghost btn-small pay-p" data-name="${escapeHtml(n)}">Record payment</button>` : ''}
+          <button class="icon-btn del khata-del" data-name="${escapeHtml(n)}" title="Delete this Khata account">Delete</button>
         </div>
-        <div class="kdue">${fmt(due)}</div>
-        ${due>0
-          ? `<span class="stamp due">Due</span><button class="btn btn-ghost btn-small pay-p">Record payment</button>`
-          : `<span class="stamp clear">Cleared</span>`}
+        <div class="khata-folder-body" style="display:${isOpen?'block':'none'};">
+          <div class="khata-subhead">Purchases on credit</div>
+          ${purchases.length ? purchases.map(b=>`
+            <div class="khata-entry">
+              <div>Invoice #${b.invoice}<span class="khata-entry-date">${new Date(b.date).toLocaleString()}</span></div>
+              <div class="khata-entry-amt">${fmt(b.total)}</div>
+            </div>
+          `).join('') : '<div class="khata-entry-empty">No purchases recorded</div>'}
+          <div class="khata-subhead">Payments received</div>
+          ${payments.length ? payments.map(p=>`
+            <div class="khata-entry">
+              <div>Payment<span class="khata-entry-date">${new Date(p.date).toLocaleString()}</span></div>
+              <div class="khata-entry-amt paid">-${fmt(p.amount)}</div>
+            </div>
+          `).join('') : '<div class="khata-entry-empty">No payments yet</div>'}
+        </div>
       </div>`;
     }).join('');
-    $$('.pay-p').forEach(b=>b.addEventListener('click', e=>recordPayment(e.target.closest('.khata-row').dataset.name)));
+
+    $$('.khata-folder-header').forEach(h=>h.addEventListener('click', (e)=>{
+      if(e.target.closest('.pay-p') || e.target.closest('.khata-del')) return;
+      const name = h.dataset.name;
+      const body = h.nextElementSibling;
+      const icon = h.querySelector('.folder-icon');
+      const nowOpen = body.style.display !== 'block';
+      body.style.display = nowOpen ? 'block' : 'none';
+      icon.textContent = nowOpen ? '▾' : '▸';
+      if(nowOpen) openKhataFolders.add(name); else openKhataFolders.delete(name);
+    }));
+    $$('.pay-p').forEach(b=>b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      recordPayment(e.currentTarget.dataset.name);
+    }));
+    $$('.khata-del').forEach(b=>b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteKhataAccount(e.currentTarget.dataset.name);
+    }));
   }
 
   function recordPayment(name){
@@ -1017,11 +1133,37 @@
       subValue: `${name} · Current due: ${fmt(due)}`,
       fieldLabel: 'Amount received (₹)',
       onSave: (amount)=>{
-        khata[name].paid += Math.min(amount, due);
+        const applied = Math.min(amount, due);
+        const now = new Date().toISOString();
+        khata[name].paid += applied;
+        if(!khata[name].payments) khata[name].payments = [];
+        const remaining = khata[name].credit - khata[name].paid;
+        khata[name].payments.push({ id: uid(), date: now, amount: applied, remainingAfter: remaining });
         saveKhata();
         renderKhata();
         renderDayStrip();
-        toast(`Recorded ${fmt(amount)} from ${name}`);
+        toast(remaining<=0 ? `${name}'s Khata account is now fully paid` : `Recorded ${fmt(applied)} from ${name}`);
+        printPaymentSlip({ name, amount: applied, previousDue: due, remainingDue: remaining, date: now });
+      }
+    });
+  }
+
+  function deleteKhataAccount(name){
+    const acc = khata[name];
+    if(!acc) return;
+    const due = acc.credit - acc.paid;
+    openConfirmModal({
+      title: 'Delete Khata account?',
+      body: due>0
+        ? `${name} still has an outstanding due of ${fmt(due)}. Deleting this account permanently erases that record — it will NOT be marked as paid. This can't be undone.`
+        : `This will permanently remove ${name}'s Khata purchase and payment history. This can't be undone.`,
+      onConfirm: async ()=>{
+        delete khata[name];
+        openKhataFolders.delete(name);
+        await saveKhata();
+        renderKhata();
+        renderDayStrip();
+        toast(`Deleted Khata account for ${name}`);
       }
     });
   }
@@ -1056,4 +1198,4 @@
 })();
 </script>
 </body>
-</html>
+  </html>

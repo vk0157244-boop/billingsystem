@@ -90,8 +90,9 @@
   .cart-row .ci-name{flex:1;font-size:13px;font-weight:500;}
   .cart-row .ci-name .unit-price{display:block;font-size:11px;color:var(--ink-soft);font-weight:400;margin-top:1px;}
   .qty-ctrl{display:flex;align-items:center;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
-  .qty-ctrl button{width:22px;height:22px;border:none;background:#F1EFE7;font-size:14px;line-height:1;color:var(--ink);}
-  .qty-ctrl span{width:26px;text-align:center;font-size:12.5px;font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;}
+  .qty-ctrl button{width:22px;height:22px;border:none;background:#F1EFE7;font-size:14px;line-height:1;color:var(--ink);flex-shrink:0;}
+  .qty-ctrl .qty-display{padding:0 8px;text-align:center;font-size:12px;font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;cursor:pointer;border-bottom:1px dashed var(--ink-soft);white-space:nowrap;}
+  .qty-ctrl .qty-display:hover{color:var(--accent-dark);}
   .ci-total{width:64px;text-align:right;font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-size:13px;}
   .ci-remove{border:none;background:none;color:var(--danger);font-size:15px;padding:2px 4px;}
   .cart-empty{padding:28px 10px;text-align:center;color:var(--ink-soft);font-size:13px;}
@@ -142,12 +143,21 @@
   .modal-actions .btn{flex:1;}
 
   /* ---------- History ---------- */
+  .history-folder{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border-left:3px solid var(--rule-red);}
+  .folder-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;background:#FBF7EC;}
+  .folder-header:hover{background:#F5EEDC;}
+  .folder-icon{font-size:11px;color:var(--rule-red);width:12px;flex-shrink:0;}
+  .folder-label{font-family:Georgia,'Iowan Old Style','Noto Serif',serif;font-weight:700;font-size:14.5px;flex:1;}
+  .folder-meta{font-size:11.5px;color:var(--ink-soft);font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;}
+  .folder-body{border-top:1px dashed var(--line);}
   .bill-card{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);cursor:pointer;}
   .bill-card:last-child{border-bottom:none;}
   .bill-card:hover{background:#FAF6E9;}
   .bill-card .bnum{font-weight:600;font-size:13.5px;}
   .bill-card .bmeta{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
   .bill-card .bamt{font-family:ui-monospace,'SFMono-Regular','Consolas',Menlo,monospace;font-weight:600;font-size:14px;text-align:right;}
+  .bill-card-right{display:flex;align-items:center;gap:10px;}
+  .folder-del{flex-shrink:0;}
   .khata-chip{display:inline-block;margin-top:3px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:20px;border:1px solid var(--amber);color:var(--amber);}
 
   /* ---------- Khata (credit ledger) ---------- */
@@ -208,6 +218,7 @@
       <button class="tab-btn" data-view="khata">Khata</button>
       <button class="tab-btn" data-view="history">History</button>
     </nav>
+    <button class="btn btn-ghost btn-small" id="shopDetailsBtn">🏪 Shop Details</button>
     <button class="btn btn-ghost btn-small" id="installBtn" style="display:none;">⬇ Install App</button>
   </header>
   <div class="day-strip" id="dayStrip"></div>
@@ -280,10 +291,27 @@
 
   <!-- HISTORY VIEW -->
   <section class="view" id="view-history">
-    <div class="panel" id="historyList">
+    <div class="products-toolbar">
+      <input id="historySearch" type="text" placeholder="Search by invoice # or customer name…">
+    </div>
+    <div id="historyList">
       <div class="empty-note" id="historyEmptyNote">No bills yet. Bills you print will show up here.</div>
     </div>
   </section>
+</div>
+
+<!-- Shop details modal (used on the printed receipt) -->
+<div class="overlay" id="shopModal" style="display:none;">
+  <div class="modal">
+    <h3>Shop Details</h3>
+    <div class="field"><label>Shop name (shown on every bill)</label><input id="sd-name" type="text" placeholder="e.g. Sharma General Store"></div>
+    <div class="field"><label>Address (optional)</label><input id="sd-address" type="text" placeholder="e.g. Main Road, Patna"></div>
+    <div class="field"><label>Phone (optional)</label><input id="sd-phone" type="text" placeholder="e.g. 98765 43210"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="sd-cancel">Cancel</button>
+      <button class="btn btn-primary" id="sd-save">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- Add/Edit product modal -->
@@ -292,7 +320,7 @@
     <h3 id="productModalTitle">Add product</h3>
     <div class="field"><label>Name</label><input id="pf-name" type="text" placeholder="e.g. Basmati Rice 1kg"></div>
     <div class="field"><label>Price (₹)</label><input id="pf-price" type="number" min="0" step="0.01"></div>
-    <div class="field"><label>Stock quantity</label><input id="pf-stock" type="number" min="0" step="1"></div>
+    <div class="field"><label>Stock quantity</label><input id="pf-stock" type="number" min="0" step="0.001"></div>
     <div class="field"><label>Unit</label>
       <select id="pf-unit">
         <option>pcs</option><option>kg</option><option>g</option><option>l</option><option>ml</option><option>box</option><option>pack</option>
@@ -338,6 +366,8 @@
 <!-- Printable receipt template -->
 <div id="printArea">
   <h2 id="pr-store">Counter</h2>
+  <div class="rcenter" id="pr-shop-address" style="display:none;"></div>
+  <div class="rcenter" id="pr-shop-phone" style="display:none;"></div>
   <div class="rcenter" id="pr-invoice"></div>
   <div class="rcenter" id="pr-date"></div>
   <div class="rcpt-line"></div>
@@ -355,6 +385,7 @@
   let products = [];
   let bills = [];
   let khata = {}; // { customerName: { credit: number, paid: number } }
+  let shopInfo = { name: '', address: '', phone: '' };
   let cart = []; // {productId, name, price, qty}
   let editingProductId = null;
   let payMode = 'cash';
@@ -386,11 +417,18 @@
       const k = localStorage.getItem('counter_khata');
       khata = k ? JSON.parse(k) : {};
     }catch(e){ khata = {}; }
+    try{
+      const s = localStorage.getItem('counter_shopInfo');
+      shopInfo = s ? JSON.parse(s) : { name: '', address: '', phone: '' };
+    }catch(e){ shopInfo = { name: '', address: '', phone: '' }; }
     renderProductGrid();
     renderProductTable();
     renderHistory();
     renderKhata();
     renderDayStrip();
+    if(!shopInfo.name){
+      toast('Tip: add your shop name in "🏪 Shop Details" so it shows on bills');
+    }
   }
   function saveProducts(){
     try{ localStorage.setItem('counter_products', JSON.stringify(products)); }
@@ -404,6 +442,30 @@
     try{ localStorage.setItem('counter_khata', JSON.stringify(khata)); }
     catch(e){ toast('Could not save khata (storage may be full)'); }
   }
+  function saveShopInfo(){
+    try{ localStorage.setItem('counter_shopInfo', JSON.stringify(shopInfo)); }
+    catch(e){ toast('Could not save shop details (storage may be full)'); }
+  }
+
+  // ---------- shop details modal ----------
+  $('#shopDetailsBtn').addEventListener('click', ()=>{
+    $('#sd-name').value = shopInfo.name || '';
+    $('#sd-address').value = shopInfo.address || '';
+    $('#sd-phone').value = shopInfo.phone || '';
+    $('#shopModal').style.display = 'flex';
+    $('#sd-name').focus();
+  });
+  $('#sd-cancel').addEventListener('click', ()=> $('#shopModal').style.display='none');
+  $('#shopModal').addEventListener('click', e=>{ if(e.target.id==='shopModal') $('#shopModal').style.display='none'; });
+  $('#sd-save').addEventListener('click', async ()=>{
+    const name = $('#sd-name').value.trim();
+    if(!name){ toast('Enter your shop name'); return; }
+    shopInfo = { name, address: $('#sd-address').value.trim(), phone: $('#sd-phone').value.trim() };
+    await saveShopInfo();
+    $('#shopModal').style.display = 'none';
+    toast('Shop details saved');
+  });
+
 
   // ---------- tabs ----------
   $$('.tab-btn').forEach(btn=>{
@@ -445,6 +507,11 @@
 
 
   // ---------- product grid (billing side) ----------
+  function formatQty(q){
+    return (Math.round(q*1000)/1000).toString();
+  }
+  const WEIGHT_UNITS = ['kg','g','l','ml'];
+
   function renderProductGrid(){
     const q = ($('#productSearch').value||'').toLowerCase();
     const grid = $('#productGrid');
@@ -458,8 +525,8 @@
       const low = !out && p.stock<=5;
       return `<div class="product-card ${out?'out':''}" data-id="${p.id}">
         <div class="pname">${escapeHtml(p.name)}</div>
-        <div class="pprice">${fmt(p.price)}</div>
-        <div class="pstock ${low?'low':''}">${out? 'Out of stock' : p.stock+' '+p.unit+' left'}</div>
+        <div class="pprice">${fmt(p.price)} <span style="font-size:10px;color:var(--ink-soft);font-weight:400;">/ ${p.unit}</span></div>
+        <div class="pstock ${low?'low':''}">${out? 'Out of stock' : formatQty(p.stock)+' '+p.unit+' left'}</div>
       </div>`;
     }).join('');
     $$('.product-card').forEach(card=>{
@@ -478,10 +545,30 @@
     const p = products.find(x=>x.id===productId);
     if(!p || p.stock<=0) return;
     const existing = cart.find(c=>c.productId===productId);
+
+    // Weight/volume items: always ask for an exact amount instead of blindly adding 1.
+    if(WEIGHT_UNITS.includes(p.unit)){
+      openAmountModal({
+        title: 'Add quantity',
+        subLabel: 'Product',
+        subValue: `${p.name} · Available: ${formatQty(p.stock)} ${p.unit}`,
+        fieldLabel: `Quantity to add (${p.unit})`,
+        onSave: (amount)=>{
+          const inCart = existing? existing.qty : 0;
+          if(inCart + amount > p.stock){ toast('Not enough stock available'); return; }
+          if(existing){ existing.qty += amount; }
+          else { cart.push({productId:p.id, name:p.name, price:p.price, qty:amount, unit:p.unit}); }
+          renderCart();
+        }
+      });
+      return;
+    }
+
+    // Piece-based items: quick tap-to-add-1, exact quantity can still be set by tapping the qty chip.
     const inCart = existing? existing.qty : 0;
     if(inCart >= p.stock){ toast('No more stock available'); return; }
     if(existing){ existing.qty++; }
-    else { cart.push({productId:p.id, name:p.name, price:p.price, qty:1}); }
+    else { cart.push({productId:p.id, name:p.name, price:p.price, qty:1, unit:p.unit}); }
     renderCart();
   }
   function changeQty(productId, delta){
@@ -493,6 +580,22 @@
     else if(p && newQty>p.stock){ toast('No more stock available'); return; }
     else{ item.qty = newQty; }
     renderCart();
+  }
+  function editCartQty(productId){
+    const item = cart.find(c=>c.productId===productId);
+    const p = products.find(x=>x.id===productId);
+    if(!item || !p) return;
+    openAmountModal({
+      title: 'Set exact quantity',
+      subLabel: 'Product',
+      subValue: `${p.name} · Available: ${formatQty(p.stock)} ${p.unit}`,
+      fieldLabel: `Quantity (${p.unit})`,
+      onSave: (amount)=>{
+        if(amount>p.stock){ toast('Not enough stock available'); return; }
+        item.qty = amount;
+        renderCart();
+      }
+    });
   }
   function removeFromCart(productId){
     cart = cart.filter(c=>c.productId!==productId);
@@ -515,19 +618,23 @@
     if(cart.length===0){
       wrap.innerHTML = `<div class="cart-empty">Tap a product to add it to the bill.</div>`;
     } else {
-      wrap.innerHTML = cart.map(c=>`
+      wrap.innerHTML = cart.map(c=>{
+        const isWeight = WEIGHT_UNITS.includes(c.unit);
+        return `
         <div class="cart-row" data-id="${c.productId}">
-          <div class="ci-name">${escapeHtml(c.name)}<span class="unit-price">${fmt(c.price)} each</span></div>
+          <div class="ci-name">${escapeHtml(c.name)}<span class="unit-price">${fmt(c.price)} / ${c.unit}</span></div>
           <div class="qty-ctrl">
-            <button class="qminus">−</button>
-            <span>${c.qty}</span>
-            <button class="qplus">+</button>
+            ${isWeight ? '' : '<button class="qminus">−</button>'}
+            <span class="qty-display" title="Tap to enter exact quantity">${formatQty(c.qty)} ${c.unit}</span>
+            ${isWeight ? '' : '<button class="qplus">+</button>'}
           </div>
           <div class="ci-total mono">${fmt(c.price*c.qty)}</div>
           <button class="ci-remove" title="Remove">✕</button>
-        </div>`).join('');
+        </div>`;
+      }).join('');
       $$('.qminus').forEach(b=>b.addEventListener('click', e=>changeQty(e.target.closest('.cart-row').dataset.id, -1)));
       $$('.qplus').forEach(b=>b.addEventListener('click', e=>changeQty(e.target.closest('.cart-row').dataset.id, 1)));
+      $$('.qty-display').forEach(el=>el.addEventListener('click', e=>editCartQty(e.target.closest('.cart-row').dataset.id)));
       $$('.ci-remove').forEach(b=>b.addEventListener('click', e=>removeFromCart(e.target.closest('.cart-row').dataset.id)));
     }
     const t = computeTotals();
@@ -563,7 +670,7 @@
       date: new Date().toISOString(),
       customer: custName,
       mode: payMode,
-      items: cart.map(c=>({name:c.name, price:c.price, qty:c.qty, total:c.price*c.qty})),
+      items: cart.map(c=>({name:c.name, price:c.price, qty:c.qty, unit:c.unit, total:c.price*c.qty})),
       subtotal: t.subtotal, taxRate: t.taxRate, taxAmt: t.taxAmt,
       discRate: t.discRate, discAmt: t.discAmt, total: t.total
     };
@@ -594,14 +701,18 @@
   });
 
   function printBill(bill){
-    $('#pr-store').textContent = $('#storeNameDisplay').textContent;
+    $('#pr-store').textContent = shopInfo.name || $('#storeNameDisplay').textContent;
+    if(shopInfo.address){ $('#pr-shop-address').style.display='block'; $('#pr-shop-address').textContent = shopInfo.address; }
+    else { $('#pr-shop-address').style.display='none'; }
+    if(shopInfo.phone){ $('#pr-shop-phone').style.display='block'; $('#pr-shop-phone').textContent = 'Ph: ' + shopInfo.phone; }
+    else { $('#pr-shop-phone').style.display='none'; }
     $('#pr-invoice').textContent = 'Invoice #' + bill.invoice;
     $('#pr-date').textContent = new Date(bill.date).toLocaleString();
     if(bill.customer){ $('#pr-cust').style.display='block'; $('#pr-cust').textContent = 'Customer: ' + bill.customer + (bill.mode==='credit' ? '  (KHATA — pay later)' : ''); }
     else { $('#pr-cust').style.display='none'; }
     $('#pr-items').innerHTML = bill.items.map(it=>`
       <tr><td colspan="2">${escapeHtml(it.name)}</td></tr>
-      <tr><td>${it.qty} x ${fmt(it.price)}</td><td class="r-right">${fmt(it.total)}</td></tr>
+      <tr><td>${formatQty(it.qty)} ${it.unit||''} x ${fmt(it.price)}</td><td class="r-right">${fmt(it.total)}</td></tr>
     `).join('');
     let totalsRows = `<tr><td>Subtotal</td><td class="r-right">${fmt(bill.subtotal)}</td></tr>`;
     if(bill.discRate>0) totalsRows += `<tr><td>Discount (${bill.discRate}%)</td><td class="r-right">-${fmt(bill.discAmt)}</td></tr>`;
@@ -622,7 +733,7 @@
       return `<tr data-id="${p.id}">
         <td>${escapeHtml(p.name)}</td>
         <td class="num">${fmt(p.price)}</td>
-        <td><span class="stock-badge ${low?'low':'ok'}">${p.stock} ${p.unit}</span></td>
+        <td><span class="stock-badge ${low?'low':'ok'}">${formatQty(p.stock)} ${p.unit}</span></td>
         <td>${p.unit}</td>
         <td>
           <div class="row-actions">
@@ -645,16 +756,15 @@
     openAmountModal({
       title: 'Add stock',
       subLabel: 'Product',
-      subValue: `${p.name} · Current stock: ${p.stock} ${p.unit}`,
+      subValue: `${p.name} · Current stock: ${formatQty(p.stock)} ${p.unit}`,
       fieldLabel: `Quantity to add (${p.unit})`,
       onSave: (amount)=>{
-        const qty = Math.round(amount);
-        if(qty<=0){ toast('Enter a valid quantity'); return; }
-        p.stock += qty;
+        if(amount<=0){ toast('Enter a valid quantity'); return; }
+        p.stock += amount;
         saveProducts();
         renderProductTable();
         renderProductGrid();
-        toast(`Added ${qty} ${p.unit} — new stock: ${p.stock}`);
+        toast(`Added ${formatQty(amount)} ${p.unit} — new stock: ${formatQty(p.stock)}`);
       }
     });
   }
@@ -718,7 +828,7 @@
   $('#pf-save').addEventListener('click', async ()=>{
     const name = $('#pf-name').value.trim();
     const price = parseFloat($('#pf-price').value);
-    const stock = parseInt($('#pf-stock').value);
+    const stock = parseFloat($('#pf-stock').value);
     const unit = $('#pf-unit').value;
     if(!name){ toast('Enter a product name'); return; }
     if(isNaN(price) || price<0){ toast('Enter a valid price'); return; }
@@ -753,27 +863,118 @@
   }
 
   // ---------- history ----------
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let openFolders = new Set();
+
   function renderHistory(){
     const wrap = $('#historyList');
     if(bills.length===0){
       wrap.innerHTML = `<div class="empty-note" id="historyEmptyNote">No bills yet. Bills you print will show up here.</div>`;
       return;
     }
-    wrap.innerHTML = bills.map(b=>`
-      <div class="bill-card" data-id="${b.id}">
-        <div>
-          <div class="bnum">Invoice #${b.invoice}${b.customer? ' · '+escapeHtml(b.customer):''}</div>
-          <div class="bmeta">${new Date(b.date).toLocaleString()} · ${b.items.length} item(s)</div>
-          ${b.mode==='credit' ? '<span class="khata-chip">Khata</span>' : ''}
+    const q = ($('#historySearch').value||'').trim().toLowerCase();
+    const filtered = q
+      ? bills.filter(b => b.invoice.toLowerCase().includes(q) || (b.customer||'').toLowerCase().includes(q))
+      : bills;
+    if(filtered.length===0){
+      wrap.innerHTML = `<div class="empty-note">No bills match "${escapeHtml(q)}".</div>`;
+      return;
+    }
+
+    // group bills by year-month
+    const groups = {};
+    filtered.forEach(b=>{
+      const d = new Date(b.date);
+      const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      (groups[key] = groups[key] || []).push(b);
+    });
+    const monthKeys = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
+
+    // auto-expand the newest month, and any month currently open, and every month while searching
+    if(openFolders.size===0 && monthKeys.length) openFolders.add(monthKeys[0]);
+
+    wrap.innerHTML = monthKeys.map(key=>{
+      const [y,m] = key.split('-');
+      const label = MONTH_NAMES[parseInt(m,10)-1] + ' ' + y;
+      const groupBills = groups[key];
+      const monthTotal = groupBills.reduce((s,b)=>s+b.total,0);
+      const isOpen = q ? true : openFolders.has(key);
+      return `<div class="history-folder">
+        <div class="folder-header" data-month="${key}">
+          <span class="folder-icon">${isOpen?'▾':'▸'}</span>
+          <span class="folder-label">${label}</span>
+          <span class="folder-meta">${groupBills.length} bill${groupBills.length===1?'':'s'} · ${fmt(monthTotal)}</span>
+          <button class="icon-btn del folder-del" data-month="${key}" data-label="${escapeHtml(label)}" title="Delete all bills in ${escapeHtml(label)}">Delete month</button>
         </div>
-        <div class="bamt">${fmt(b.total)}</div>
-      </div>
-    `).join('');
-    $$('.bill-card').forEach(el=>el.addEventListener('click', ()=>{
+        <div class="folder-body" data-body="${key}" style="display:${isOpen?'block':'none'};">
+          ${groupBills.map(b=>`
+            <div class="bill-card" data-id="${b.id}">
+              <div>
+                <div class="bnum">Invoice #${b.invoice}${b.customer? ' · '+escapeHtml(b.customer):''}</div>
+                <div class="bmeta">${new Date(b.date).toLocaleString()} · ${b.items.length} item(s)</div>
+                ${b.mode==='credit' ? '<span class="khata-chip">Khata</span>' : ''}
+              </div>
+              <div class="bill-card-right">
+                <div class="bamt">${fmt(b.total)}</div>
+                <button class="icon-btn del bill-del" data-id="${b.id}" title="Delete this bill">✕</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    }).join('');
+
+    $$('.folder-header').forEach(h=>h.addEventListener('click', (e)=>{
+      if(e.target.closest('.folder-del')) return;
+      const key = h.dataset.month;
+      const body = document.querySelector(`.folder-body[data-body="${key}"]`);
+      const icon = h.querySelector('.folder-icon');
+      const nowOpen = body.style.display !== 'block';
+      body.style.display = nowOpen ? 'block' : 'none';
+      icon.textContent = nowOpen ? '▾' : '▸';
+      if(nowOpen) openFolders.add(key); else openFolders.delete(key);
+    }));
+    $$('.folder-del').forEach(btn=>btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const key = btn.dataset.month;
+      const label = btn.dataset.label;
+      const count = (groups[key]||[]).length;
+      openConfirmModal({
+        title: `Delete ${label}?`,
+        body: `This will permanently delete all ${count} bill(s) from ${label}. Product stock and Khata balances are not affected — this only clears the history record. This can't be undone.`,
+        onConfirm: async ()=>{
+          const idsToDelete = new Set(groups[key].map(b=>b.id));
+          bills = bills.filter(b=>!idsToDelete.has(b.id));
+          openFolders.delete(key);
+          await saveBills();
+          renderHistory();
+          toast(`Deleted ${count} bill(s) from ${label}`);
+        }
+      });
+    }));
+    $$('.bill-del').forEach(btn=>btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const bill = bills.find(b=>b.id===id);
+      if(!bill) return;
+      openConfirmModal({
+        title: 'Delete this bill?',
+        body: `Invoice #${bill.invoice}${bill.customer? ' · '+bill.customer : ''} will be permanently removed from history. Product stock and Khata balances are not affected. This can't be undone.`,
+        onConfirm: async ()=>{
+          bills = bills.filter(b=>b.id!==id);
+          await saveBills();
+          renderHistory();
+          toast('Bill deleted');
+        }
+      });
+    }));
+    $$('.bill-card').forEach(el=>el.addEventListener('click', (e)=>{
+      if(e.target.closest('.bill-del')) return;
       const bill = bills.find(b=>b.id===el.dataset.id);
       if(bill) printBill(bill);
     }));
   }
+  $('#historySearch').addEventListener('input', renderHistory);
 
   // ---------- khata (credit ledger) ----------
   function renderKhata(){

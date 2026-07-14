@@ -198,6 +198,22 @@
   section.view{display:none;}
   section.view.active{display:block;}
 
+  /* ---------- App lock (PIN) ---------- */
+  .lock-overlay{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .lock-box{width:100%;max-width:300px;text-align:center;}
+  .lock-mark{width:52px;height:52px;border-radius:50%;border:2px solid var(--rule-red);outline:1px solid var(--rule-red);outline-offset:2px;color:var(--rule-red);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:14px;margin:0 auto 18px;transform:rotate(-8deg);}
+  .lock-box h2{font-size:19px;margin-bottom:4px;}
+  .lock-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:22px;}
+  .pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:14px;}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--rule-red);background:transparent;transition:background .1s;}
+  .pin-dot.filled{background:var(--rule-red);}
+  .lock-error{color:var(--danger);font-size:12px;min-height:18px;margin-bottom:6px;font-weight:600;}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:240px;margin:14px auto 0;}
+  .keypad button{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:19px;font-weight:600;color:var(--ink);}
+  .keypad button:active{background:#EDE6D2;}
+  .keypad .keypad-empty{visibility:hidden;pointer-events:none;}
+  .lock-forgot{margin-top:20px;border:none;background:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;padding:6px;}
+
   /* ---------- Printable receipt ---------- */
   #printArea, #printSlip{display:none;}
   @media print{
@@ -216,6 +232,28 @@
 </style>
 </head>
 <body>
+
+<!-- App lock (6-digit PIN, like a phone lock screen) -->
+<div class="lock-overlay" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-mark">CTR</div>
+    <h2 id="lockTitle">Enter PIN</h2>
+    <div class="lock-sub" id="lockSub">Enter your 6-digit security code</div>
+    <div class="pin-dots" id="pinDots">
+      <span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span>
+      <span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span>
+    </div>
+    <div class="lock-error" id="lockError"></div>
+    <div class="keypad" id="keypad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button class="keypad-empty" tabindex="-1"></button><button data-k="0">0</button><button id="pinBackspace">⌫</button>
+    </div>
+    <button class="lock-forgot" id="forgotPinBtn">Forgot PIN?</button>
+  </div>
+</div>
+
 <div id="app">
   <header class="top">
     <div class="brand">
@@ -232,6 +270,7 @@
       <button class="tab-btn" data-view="history">History</button>
     </nav>
     <button class="btn btn-ghost btn-small" id="shopDetailsBtn">🏪 Shop Details</button>
+    <button class="btn btn-ghost btn-small" id="changePinBtn">🔒 Change PIN</button>
     <button class="btn btn-ghost btn-small" id="installBtn" style="display:none;">⬇ Install App</button>
   </header>
   <div class="day-strip" id="dayStrip"></div>
@@ -397,11 +436,12 @@
   <h2 id="ks-store">Counter</h2>
   <div class="rcenter" id="ks-address" style="display:none;"></div>
   <div class="rcenter" id="ks-phone" style="display:none;"></div>
-  <div class="rcenter" style="font-weight:700;margin-top:6px;">KHATA PAYMENT RECEIPT</div>
+  <div class="rcenter" style="font-weight:700;margin-top:6px;">KHATA STATEMENT</div>
   <div class="rcenter" id="ks-date"></div>
   <div class="rcpt-line"></div>
   <div class="rcenter" id="ks-customer" style="font-weight:700;"></div>
   <div id="ks-items-wrap"></div>
+  <div id="ks-payments-wrap"></div>
   <div class="rcpt-line"></div>
   <table id="ks-rows"></table>
   <div class="rcenter" id="ks-status" style="font-weight:700;margin-top:6px;"></div>
@@ -755,15 +795,18 @@
   }
 
   // ---------- Khata payment slip (printed every time a payment is recorded) ----------
-  function printPaymentSlip({name, amount, previousDue, remainingDue, date}){
+  function printPaymentSlip(name, highlightPaymentId){
+    const acc = khata[name];
+    if(!acc) return;
     $('#ks-store').textContent = shopInfo.name || $('#storeNameDisplay').textContent;
     if(shopInfo.address){ $('#ks-address').style.display='block'; $('#ks-address').textContent = shopInfo.address; }
     else { $('#ks-address').style.display='none'; }
     if(shopInfo.phone){ $('#ks-phone').style.display='block'; $('#ks-phone').textContent = 'Ph: ' + shopInfo.phone; }
     else { $('#ks-phone').style.display='none'; }
-    $('#ks-date').textContent = new Date(date).toLocaleString();
+    $('#ks-date').textContent = 'Printed ' + new Date().toLocaleString();
     $('#ks-customer').textContent = name;
 
+    // Every product ever bought on credit by this customer.
     const purchases = bills.filter(b=>b.customer===name && b.mode==='credit').slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
     let itemsHtml = '';
     if(purchases.length){
@@ -778,14 +821,28 @@
     }
     $('#ks-items-wrap').innerHTML = itemsHtml;
 
-    const remaining = Math.max(0, remainingDue);
-    const paidInFull = remaining <= 0;
+    // Every payment ever made, in order, each with its own date and time — so all installments show together.
+    const payments = (acc.payments||[]).slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
+    let payHtml = '';
+    if(payments.length){
+      payHtml += `<div class="rcpt-line"></div><div class="rcenter" style="font-weight:700;">Payments received</div><table>`;
+      payments.forEach((p,idx)=>{
+        const isHighlight = highlightPaymentId && p.id===highlightPaymentId;
+        const dateStr = new Date(p.date).toLocaleDateString() + ' ' + new Date(p.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        payHtml += `<tr><td${isHighlight? ' style="font-weight:700;"':''}>${isHighlight?'→ ':''}Payment ${idx+1} — ${dateStr}</td><td class="r-right"${isHighlight? ' style="font-weight:700;"':''}>${fmt(p.amount)}</td></tr>`;
+      });
+      payHtml += `</table>`;
+    }
+    $('#ks-payments-wrap').innerHTML = payHtml;
+
+    const due = Math.max(0, acc.credit - acc.paid);
+    const paidInFull = due <= 0;
     $('#ks-rows').innerHTML = `
-      <tr><td>Previous due</td><td class="r-right">${fmt(previousDue)}</td></tr>
-      <tr><td style="font-weight:700;">Amount received</td><td class="r-right" style="font-weight:700;">${fmt(amount)}</td></tr>
-      <tr><td style="font-weight:700;">Remaining due</td><td class="r-right" style="font-weight:700;">${fmt(remaining)}</td></tr>
+      <tr><td>Total credit given</td><td class="r-right">${fmt(acc.credit)}</td></tr>
+      <tr><td style="font-weight:700;">Total received</td><td class="r-right" style="font-weight:700;">${fmt(acc.paid)}</td></tr>
+      <tr><td style="font-weight:700;">Balance due</td><td class="r-right" style="font-weight:700;">${fmt(due)}</td></tr>
     `;
-    $('#ks-status').textContent = paidInFull ? '✔ PAYMENT RECEIVED — ACCOUNT FULLY PAID' : 'PAYMENT RECEIVED — BALANCE CARRIED FORWARD';
+    $('#ks-status').textContent = paidInFull ? '✔ ACCOUNT FULLY PAID' : 'BALANCE CARRIED FORWARD';
     $('#ks-note').textContent = paidInFull
       ? 'Thank you — this Khata account is now fully settled.'
       : 'Thank you — please retain this slip as proof of payment.';
@@ -868,9 +925,10 @@
 
   // ---------- generic confirm modal (delete actions) ----------
   let confirmModalCallback = null;
-  function openConfirmModal({title, body, onConfirm}){
+  function openConfirmModal({title, body, onConfirm, confirmLabel}){
     $('#confirmModalTitle').textContent = title;
     $('#confirmModalBody').textContent = body;
+    $('#cf-ok').textContent = confirmLabel || 'Delete';
     confirmModalCallback = onConfirm;
     $('#confirmModal').style.display = 'flex';
   }
@@ -954,6 +1012,7 @@
       return;
     }
 
+    // group bills by year-month
     const groups = {};
     filtered.forEach(b=>{
       const d = new Date(b.date);
@@ -962,6 +1021,7 @@
     });
     const monthKeys = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
 
+    // auto-expand the newest month, and any month currently open, and every month while searching
     if(openFolders.size===0 && monthKeys.length) openFolders.add(monthKeys[0]);
 
     wrap.innerHTML = monthKeys.map(key=>{
@@ -1129,12 +1189,7 @@
     $$('.khata-entry[data-payment-id]').forEach(el=>el.addEventListener('click', (e)=>{
       e.stopPropagation();
       const name = el.dataset.name;
-      const acc = khata[name];
-      if(!acc) return;
-      const p = (acc.payments||[]).find(x=>x.id===el.dataset.paymentId);
-      if(!p) return;
-      const prevDue = (p.previousDue !== undefined) ? p.previousDue : (p.remainingAfter + p.amount);
-      printPaymentSlip({ name, amount: p.amount, previousDue: prevDue, remainingDue: p.remainingAfter, date: p.date });
+      printPaymentSlip(name, el.dataset.paymentId);
     }));
   }
 
@@ -1151,12 +1206,13 @@
         khata[name].paid += applied;
         if(!khata[name].payments) khata[name].payments = [];
         const remaining = khata[name].credit - khata[name].paid;
-        khata[name].payments.push({ id: uid(), date: now, amount: applied, previousDue: due, remainingAfter: remaining });
+        const newPayment = { id: uid(), date: now, amount: applied, previousDue: due, remainingAfter: remaining };
+        khata[name].payments.push(newPayment);
         saveKhata();
         renderKhata();
         renderDayStrip();
         toast(remaining<=0 ? `${name}'s Khata account is now fully paid` : `Recorded ${fmt(applied)} from ${name}`);
-        printPaymentSlip({ name, amount: applied, previousDue: due, remainingDue: remaining, date: now });
+        printPaymentSlip(name, newPayment.id);
       }
     });
   }
@@ -1180,6 +1236,147 @@
       }
     });
   }
+
+  // ---------- App lock (6-digit PIN) ----------
+  async function sha256(text){
+    if(window.crypto && window.crypto.subtle && window.isSecureContext){
+      try{
+        const enc = new TextEncoder().encode(text);
+        const buf = await crypto.subtle.digest('SHA-256', enc);
+        return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      }catch(e){ /* fall through to simple hash below */ }
+    }
+    // Fallback for contexts without SubtleCrypto (e.g. plain file:// pages) — good enough for local PIN gating.
+    let h = 0;
+    for(let i=0;i<text.length;i++){ h = (h*31 + text.charCodeAt(i)) | 0; }
+    return 'fh_' + (h>>>0).toString(16);
+  }
+
+  let pinBuffer = '';
+  let pinStage = 'enter'; // 'enter' | 'verify-current' | 'create' | 'confirm'
+  let firstPin = '';
+  let isChangingPin = false;
+
+  function renderPinDots(){
+    $$('#pinDots .pin-dot').forEach((d,i)=> d.classList.toggle('filled', i < pinBuffer.length));
+  }
+  function setLockError(msg){ $('#lockError').textContent = msg || ''; }
+  function setCreateStageText(){
+    $('#lockTitle').textContent = isChangingPin ? 'Set a new PIN' : 'Set a PIN';
+    $('#lockSub').textContent = isChangingPin ? 'Create a new 6-digit code' : 'Create a 6-digit code to protect this app';
+  }
+
+  function initLock(){
+    const storedHash = localStorage.getItem('counter_pinHash');
+    isChangingPin = false;
+    pinBuffer = ''; firstPin = '';
+    if(!storedHash){
+      pinStage = 'create';
+      setCreateStageText();
+    } else {
+      pinStage = 'enter';
+      $('#lockTitle').textContent = 'Enter PIN';
+      $('#lockSub').textContent = 'Enter your 6-digit security code';
+    }
+    $('#forgotPinBtn').style.display = '';
+    renderPinDots();
+    setLockError('');
+    $('#lockScreen').style.display = 'flex';
+  }
+
+  function openChangePin(){
+    if(!localStorage.getItem('counter_pinHash')){ toast('No PIN set yet'); return; }
+    isChangingPin = true;
+    pinStage = 'verify-current';
+    pinBuffer = ''; firstPin = '';
+    $('#lockTitle').textContent = 'Enter current PIN';
+    $('#lockSub').textContent = 'Verify your current 6-digit code to change it';
+    $('#forgotPinBtn').style.display = 'none';
+    renderPinDots();
+    setLockError('');
+    $('#lockScreen').style.display = 'flex';
+  }
+  $('#changePinBtn').addEventListener('click', openChangePin);
+
+  async function handlePinComplete(){
+    const storedHash = localStorage.getItem('counter_pinHash');
+
+    if(pinStage === 'verify-current'){
+      const hash = await sha256(pinBuffer);
+      pinBuffer = '';
+      if(hash === storedHash){
+        pinStage = 'create';
+        setCreateStageText();
+      } else {
+        setLockError('Incorrect current PIN');
+      }
+      renderPinDots();
+      return;
+    }
+
+    if(pinStage === 'create'){
+      firstPin = pinBuffer;
+      pinBuffer = '';
+      pinStage = 'confirm';
+      $('#lockTitle').textContent = 'Confirm PIN';
+      $('#lockSub').textContent = 'Re-enter your 6-digit code';
+      renderPinDots();
+      return;
+    }
+
+    if(pinStage === 'confirm'){
+      if(pinBuffer !== firstPin){
+        setLockError("PINs didn't match — try again");
+        pinBuffer = ''; firstPin = '';
+        pinStage = 'create';
+        setCreateStageText();
+        renderPinDots();
+        return;
+      }
+      const hash = await sha256(pinBuffer);
+      localStorage.setItem('counter_pinHash', hash);
+      if(isChangingPin){
+        isChangingPin = false;
+        $('#lockScreen').style.display = 'none';
+        toast('PIN updated');
+      } else {
+        $('#lockScreen').style.display = 'none';
+      }
+      return;
+    }
+
+    // pinStage === 'enter'
+    const hash = await sha256(pinBuffer);
+    if(hash === storedHash){
+      $('#lockScreen').style.display = 'none';
+    } else {
+      setLockError('Incorrect PIN — try again');
+      pinBuffer = '';
+      renderPinDots();
+    }
+  }
+
+  $$('#keypad button[data-k]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(pinBuffer.length>=6) return;
+      pinBuffer += btn.dataset.k;
+      renderPinDots();
+      setLockError('');
+      if(pinBuffer.length===6) handlePinComplete();
+    });
+  });
+  $('#pinBackspace').addEventListener('click', ()=>{
+    pinBuffer = pinBuffer.slice(0,-1);
+    renderPinDots();
+  });
+  $('#forgotPinBtn').addEventListener('click', ()=>{
+    openConfirmModal({
+      title: 'Forgot your PIN?',
+      body: "PINs are only stored on this device — there's no way to recover or reset one from within the app. The only option is clearing this app's storage from your browser settings, which will also erase all your saved products, bills, and Khata records. If you're not sure how, it's best to be certain you remember your PIN before setting one.",
+      confirmLabel: 'Got it',
+      onConfirm: ()=>{}
+    });
+  });
 
   // ---------- PWA: service worker + install prompt ----------
   if('serviceWorker' in navigator){
@@ -1208,7 +1405,8 @@
   // init
   renderCart();
   loadData();
+  initLock();
 })();
 </script>
 </body>
-  </html>
+</html>

@@ -38,7 +38,6 @@
   button{font-family:inherit;cursor:pointer;}
   input,select{font-family:inherit;}
 
-  /* ---------- App shell ---------- */
   #app{max-width:1180px;margin:0 auto;padding:0 20px 60px;}
   header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:22px 0 16px;border-bottom:1px solid var(--line);margin-bottom:14px;}
   .brand{display:flex;align-items:center;gap:12px;}
@@ -58,13 +57,18 @@
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);position:relative;}
   .panel.ledger{padding-left:14px;border-left:3px solid var(--rule-red);}
 
-  /* ---------- Billing layout ---------- */
   .billing-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
   @media (max-width:880px){.billing-grid{grid-template-columns:1fr;}}
 
   .search-row{display:flex;gap:10px;margin-bottom:14px;}
   .search-row input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface);}
   .search-row input:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+
+  .cat-filter{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch;}
+  .cat-filter::-webkit-scrollbar{height:4px;}
+  .cat-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1.5px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink-soft);white-space:nowrap;}
+  .cat-chip.active{border-color:var(--accent);color:var(--accent-dark);background:#E9F3EC;}
+  .pcat{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-top:2px;}
 
   .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
   .product-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s, transform .1s;position:relative;}
@@ -77,7 +81,6 @@
   .product-card .pstock.low{color:var(--danger);font-weight:600;}
   .empty-note{color:var(--ink-soft);font-size:13.5px;padding:30px 10px;text-align:center;}
 
-  /* ---------- Ticket / cart ---------- */
   .ticket{position:sticky;top:20px;padding:0;overflow:hidden;border-left:3px solid var(--rule-red);}
   .ticket-head{padding:18px 20px 14px;border-bottom:1px dashed var(--line);}
   .ticket-head h2{font-size:16px;}
@@ -112,12 +115,10 @@
   .btn-danger{background:var(--danger-soft);color:var(--danger);}
   .btn-small{padding:6px 10px;font-size:12px;border-radius:6px;}
 
-  /* zigzag receipt edge */
   .ticket::after{content:"";display:block;height:14px;
     background:linear-gradient(-45deg, var(--bg) 6px, transparent 0), linear-gradient(45deg, var(--bg) 6px, var(--surface) 0);
     background-position:bottom left;background-size:14px 14px;background-repeat:repeat-x;}
 
-  /* ---------- Products view ---------- */
   .products-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;}
   .products-toolbar input{flex:1;max-width:320px;padding:10px 13px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;}
   table.ptable{width:100%;border-collapse:collapse;font-size:13.5px;}
@@ -132,7 +133,6 @@
   .icon-btn{border:none;background:#F1EFE7;border-radius:6px;padding:6px 9px;font-size:12px;}
   .icon-btn.del{background:var(--danger-soft);color:var(--danger);}
 
-  /* ---------- Modal ---------- */
   .overlay{position:fixed;inset:0;background:rgba(28,35,33,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
   .modal{background:var(--surface);border-radius:12px;padding:26px;width:100%;max-width:400px;}
   .modal h3{font-size:16px;margin-bottom:16px;}
@@ -142,7 +142,6 @@
   .modal-actions{display:flex;gap:8px;margin-top:18px;}
   .modal-actions .btn{flex:1;}
 
-  /* ---------- History ---------- */
   .history-folder{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border-left:3px solid var(--rule-red);}
   .folder-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;background:#FBF7EC;}
   .folder-header:hover{background:#F5EEDC;}
@@ -160,7 +159,6 @@
   .folder-del{flex-shrink:0;}
   .khata-chip{display:inline-block;margin-top:3px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:20px;border:1px solid var(--amber);color:var(--amber);}
 
-  /* ---------- Khata (credit ledger) ---------- */
   .pay-toggle{display:flex;gap:8px;margin-top:10px;}
   .pay-toggle button{flex:1;padding:8px 10px;border-radius:7px;border:1.5px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink-soft);}
   .pay-toggle button.active{border-color:var(--accent);color:var(--accent-dark);background:#E9F3EC;}
@@ -198,7 +196,6 @@
   section.view{display:none;}
   section.view.active{display:block;}
 
-  /* ---------- App lock (PIN) ---------- */
   .lock-overlay{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;}
   .lock-box{width:100%;max-width:300px;text-align:center;}
   .lock-mark{width:52px;height:52px;border-radius:50%;border:2px solid var(--rule-red);outline:1px solid var(--rule-red);outline-offset:2px;color:var(--rule-red);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:14px;margin:0 auto 18px;transform:rotate(-8deg);}
@@ -214,7 +211,6 @@
   .keypad .keypad-empty{visibility:hidden;pointer-events:none;}
   .lock-forgot{margin-top:20px;border:none;background:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;padding:6px;}
 
-  /* ---------- Printable receipt ---------- */
   #printArea, #printSlip{display:none;}
   @media print{
     body *{visibility:hidden;}
@@ -233,7 +229,6 @@
 </head>
 <body>
 
-<!-- App lock (6-digit PIN, like a phone lock screen) -->
 <div class="lock-overlay" id="lockScreen">
   <div class="lock-box">
     <div class="lock-mark">CTR</div>
@@ -271,17 +266,18 @@
     </nav>
     <button class="btn btn-ghost btn-small" id="shopDetailsBtn">🏪 Shop Details</button>
     <button class="btn btn-ghost btn-small" id="changePinBtn">🔒 Change PIN</button>
+    <button class="btn btn-ghost btn-small" id="backupBtn">💾 Backup</button>
     <button class="btn btn-ghost btn-small" id="installBtn" style="display:none;">⬇ Install App</button>
   </header>
   <div class="day-strip" id="dayStrip"></div>
 
-  <!-- BILLING VIEW -->
   <section class="view active" id="view-billing">
     <div class="billing-grid">
       <div>
         <div class="search-row">
           <input id="productSearch" type="text" placeholder="Search products to add…">
         </div>
+        <div class="cat-filter" id="catFilter"></div>
         <div class="product-grid" id="productGrid"></div>
       </div>
 
@@ -316,7 +312,6 @@
     </div>
   </section>
 
-  <!-- PRODUCTS VIEW -->
   <section class="view" id="view-products">
     <div class="products-toolbar">
       <input id="prodTableSearch" type="text" placeholder="Search products…">
@@ -324,14 +319,13 @@
     </div>
     <div class="panel" style="overflow-x:auto;">
       <table class="ptable">
-        <thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Unit</th><th></th></tr></thead>
+        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Unit</th><th></th></tr></thead>
         <tbody id="productTableBody"></tbody>
       </table>
       <div class="empty-note" id="productsEmptyNote" style="display:none;">No products yet. Add your first one to get started.</div>
     </div>
   </section>
 
-  <!-- KHATA VIEW (credit ledger) -->
   <section class="view" id="view-khata">
     <div class="panel">
       <div class="khata-summary" id="khataSummary"></div>
@@ -341,7 +335,6 @@
     </div>
   </section>
 
-  <!-- HISTORY VIEW -->
   <section class="view" id="view-history">
     <div class="products-toolbar">
       <input id="historySearch" type="text" placeholder="Search by invoice # or customer name…">
@@ -352,7 +345,6 @@
   </section>
 </div>
 
-<!-- Shop details modal (used on the printed receipt) -->
 <div class="overlay" id="shopModal" style="display:none;">
   <div class="modal">
     <h3>Shop Details</h3>
@@ -366,7 +358,26 @@
   </div>
 </div>
 
-<!-- Add/Edit product modal -->
+<div class="overlay" id="backupModal" style="display:none;">
+  <div class="modal">
+    <h3>Backup & Restore</h3>
+    <div class="field">
+      <label>Export a backup</label>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Downloads all your products, bills, and Khata records as one file. Keep it somewhere safe — a cloud drive or email to yourself works well.</div>
+      <button class="btn btn-primary" id="exportBtn" style="width:100%;">⬇ Download backup</button>
+    </div>
+    <div class="field" style="margin-top:18px;">
+      <label>Restore from a backup</label>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">This replaces everything currently on this device with the contents of the backup file. Your security PIN is not included in backups and won't change.</div>
+      <input type="file" id="importFile" accept="application/json" style="display:none;">
+      <button class="btn btn-ghost" id="importBtn" style="width:100%;">⬆ Restore from backup</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="backup-close" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="productModal" style="display:none;">
   <div class="modal">
     <h3 id="productModalTitle">Add product</h3>
@@ -378,6 +389,8 @@
         <option>pcs</option><option>kg</option><option>g</option><option>l</option><option>ml</option><option>box</option><option>pack</option>
       </select>
     </div>
+    <div class="field"><label>Category (optional)</label><input id="pf-category" type="text" list="categoryList" placeholder="e.g. Grocery, Dairy, Snacks"></div>
+    <datalist id="categoryList"></datalist>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="pf-cancel">Cancel</button>
       <button class="btn btn-primary" id="pf-save">Save</button>
@@ -385,7 +398,6 @@
   </div>
 </div>
 
-<!-- Generic amount-entry modal (used for restock + record payment) -->
 <div class="overlay" id="amountModal" style="display:none;">
   <div class="modal">
     <h3 id="amountModalTitle">Enter amount</h3>
@@ -401,7 +413,6 @@
   </div>
 </div>
 
-<!-- Generic confirm modal (used for delete actions) -->
 <div class="overlay" id="confirmModal" style="display:none;">
   <div class="modal">
     <h3 id="confirmModalTitle">Are you sure?</h3>
@@ -415,7 +426,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Printable receipt template -->
 <div id="printArea">
   <h2 id="pr-store">Counter</h2>
   <div class="rcenter" id="pr-shop-address" style="display:none;"></div>
@@ -431,7 +441,6 @@
   <div class="rcenter">Thank you for shopping with us</div>
 </div>
 
-<!-- Printable Khata payment slip -->
 <div id="printSlip">
   <h2 id="ks-store">Counter</h2>
   <div class="rcenter" id="ks-address" style="display:none;"></div>
@@ -454,9 +463,9 @@
   const CURRENCY = "₹";
   let products = [];
   let bills = [];
-  let khata = {}; // { customerName: { credit: number, paid: number } }
+  let khata = {};
   let shopInfo = { name: '', address: '', phone: '' };
-  let cart = []; // {productId, name, price, qty}
+  let cart = [];
   let editingProductId = null;
   let payMode = 'cash';
 
@@ -473,7 +482,6 @@
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-  // ---------- storage (browser localStorage — fully offline, no network needed) ----------
   function loadData(){
     try{
       const p = localStorage.getItem('counter_products');
@@ -491,6 +499,7 @@
       const s = localStorage.getItem('counter_shopInfo');
       shopInfo = s ? JSON.parse(s) : { name: '', address: '', phone: '' };
     }catch(e){ shopInfo = { name: '', address: '', phone: '' }; }
+    renderCatFilter();
     renderProductGrid();
     renderProductTable();
     renderHistory();
@@ -517,7 +526,6 @@
     catch(e){ toast('Could not save shop details (storage may be full)'); }
   }
 
-  // ---------- shop details modal ----------
   $('#shopDetailsBtn').addEventListener('click', ()=>{
     $('#sd-name').value = shopInfo.name || '';
     $('#sd-address').value = shopInfo.address || '';
@@ -536,8 +544,66 @@
     toast('Shop details saved');
   });
 
+  $('#backupBtn').addEventListener('click', ()=> $('#backupModal').style.display = 'flex');
+  $('#backup-close').addEventListener('click', ()=> $('#backupModal').style.display = 'none');
+  $('#backupModal').addEventListener('click', e=>{ if(e.target.id==='backupModal') $('#backupModal').style.display='none'; });
 
-  // ---------- tabs ----------
+  $('#exportBtn').addEventListener('click', ()=>{
+    const payload = { exportedAt: new Date().toISOString(), version: 1, products, bills, khata, shopInfo };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `billing-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Backup downloaded');
+  });
+
+  $('#importBtn').addEventListener('click', ()=> $('#importFile').click());
+  $('#importFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      let data;
+      try{ data = JSON.parse(ev.target.result); }
+      catch(err){ toast('Invalid backup file'); e.target.value=''; return; }
+      if(!data || !Array.isArray(data.products) || !Array.isArray(data.bills) || typeof data.khata !== 'object'){
+        toast("This file doesn't look like a valid backup");
+        e.target.value = '';
+        return;
+      }
+      openConfirmModal({
+        title: 'Restore this backup?',
+        body: `This replaces everything currently on this device — ${products.length} product(s), ${bills.length} bill(s), and all Khata records — with the contents of "${file.name}". This can't be undone.`,
+        confirmLabel: 'Restore',
+        onConfirm: async ()=>{
+          products = data.products || [];
+          bills = data.bills || [];
+          khata = data.khata || {};
+          if(data.shopInfo) shopInfo = data.shopInfo;
+          await saveProducts();
+          await saveBills();
+          await saveKhata();
+          await saveShopInfo();
+          renderCatFilter();
+          renderProductGrid();
+          renderProductTable();
+          renderHistory();
+          renderKhata();
+          renderDayStrip();
+          $('#backupModal').style.display = 'none';
+          toast('Backup restored');
+        }
+      });
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
   $$('.tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       $$('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -550,7 +616,6 @@
     });
   });
 
-  // ---------- payment mode toggle (Cash / Khata) ----------
   $$('.pmode-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       payMode = btn.dataset.mode;
@@ -560,7 +625,6 @@
     });
   });
 
-  // ---------- today's sales strip ----------
   function renderDayStrip(){
     const strip = $('#dayStrip');
     const todayStr = new Date().toDateString();
@@ -574,18 +638,35 @@
     `;
   }
 
-
-
-  // ---------- product grid (billing side) ----------
   function formatQty(q){
     return (Math.round(q*1000)/1000).toString();
   }
   const WEIGHT_UNITS = ['kg','g','l','ml'];
+  let activeCategory = 'All';
+
+  function productCategory(p){ return p.category || 'General'; }
+
+  function renderCatFilter(){
+    const wrap = $('#catFilter');
+    const uniqueCats = Array.from(new Set(products.map(productCategory))).sort((a,b)=>a.localeCompare(b));
+    if(uniqueCats.length===0){ wrap.innerHTML = ''; return; }
+    const list = ['All', ...uniqueCats];
+    if(!list.includes(activeCategory)) activeCategory = 'All';
+    wrap.innerHTML = list.map(c=>`<button class="cat-chip ${c===activeCategory?'active':''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+    $$('.cat-chip').forEach(b=>b.addEventListener('click', ()=>{
+      activeCategory = b.dataset.cat;
+      renderCatFilter();
+      renderProductGrid();
+    }));
+  }
 
   function renderProductGrid(){
     const q = ($('#productSearch').value||'').toLowerCase();
     const grid = $('#productGrid');
-    const list = products.filter(p=>p.name.toLowerCase().includes(q));
+    let list = products.filter(p=>p.name.toLowerCase().includes(q));
+    if(activeCategory && activeCategory!=='All'){
+      list = list.filter(p=> productCategory(p)===activeCategory);
+    }
     if(list.length===0){
       grid.innerHTML = `<div class="empty-note">${products.length===0 ? 'No products yet — add some in the Products tab.' : 'No matches.'}</div>`;
       return;
@@ -597,6 +678,7 @@
         <div class="pname">${escapeHtml(p.name)}</div>
         <div class="pprice">${fmt(p.price)} <span style="font-size:10px;color:var(--ink-soft);font-weight:400;">/ ${p.unit}</span></div>
         <div class="pstock ${low?'low':''}">${out? 'Out of stock' : formatQty(p.stock)+' '+p.unit+' left'}</div>
+        <div class="pcat">${escapeHtml(productCategory(p))}</div>
       </div>`;
     }).join('');
     $$('.product-card').forEach(card=>{
@@ -610,13 +692,11 @@
     return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // ---------- cart ----------
   function addToCart(productId){
     const p = products.find(x=>x.id===productId);
     if(!p || p.stock<=0) return;
     const existing = cart.find(c=>c.productId===productId);
 
-    // Weight/volume items: always ask for an exact amount instead of blindly adding 1.
     if(WEIGHT_UNITS.includes(p.unit)){
       openAmountModal({
         title: 'Add quantity',
@@ -634,7 +714,6 @@
       return;
     }
 
-    // Piece-based items: quick tap-to-add-1, exact quantity can still be set by tapping the qty chip.
     const inCart = existing? existing.qty : 0;
     if(inCart >= p.stock){ toast('No more stock available'); return; }
     if(existing){ existing.qty++; }
@@ -722,12 +801,10 @@
     renderCart();
   });
 
-  // ---------- print & save bill ----------
   $('#printBillBtn').addEventListener('click', async ()=>{
     if(cart.length===0) return;
     const custName = $('#custName').value.trim();
     if(payMode==='credit' && !custName){ toast('Enter a customer name for Khata bills'); return; }
-    // validate stock again
     for(const c of cart){
       const p = products.find(x=>x.id===c.productId);
       if(!p || p.stock < c.qty){ toast(`Not enough stock for ${c.name}`); return; }
@@ -744,7 +821,6 @@
       subtotal: t.subtotal, taxRate: t.taxRate, taxAmt: t.taxAmt,
       discRate: t.discRate, discAmt: t.discAmt, total: t.total
     };
-    // deduct stock
     cart.forEach(c=>{
       const p = products.find(x=>x.id===c.productId);
       if(p) p.stock -= c.qty;
@@ -757,6 +833,7 @@
     }
     await saveProducts();
     await saveBills();
+    renderCatFilter();
     renderProductGrid();
     renderProductTable();
     renderHistory();
@@ -794,7 +871,6 @@
     window.print();
   }
 
-  // ---------- Khata payment slip (printed every time a payment is recorded) ----------
   function printPaymentSlip(name, highlightPaymentId){
     const acc = khata[name];
     if(!acc) return;
@@ -806,7 +882,6 @@
     $('#ks-date').textContent = 'Printed ' + new Date().toLocaleString();
     $('#ks-customer').textContent = name;
 
-    // Every product ever bought on credit by this customer.
     const purchases = bills.filter(b=>b.customer===name && b.mode==='credit').slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
     let itemsHtml = '';
     if(purchases.length){
@@ -821,7 +896,6 @@
     }
     $('#ks-items-wrap').innerHTML = itemsHtml;
 
-    // Every payment ever made, in order, each with its own date and time — so all installments show together.
     const payments = (acc.payments||[]).slice().sort((a,b)=> new Date(a.date)-new Date(b.date));
     let payHtml = '';
     if(payments.length){
@@ -852,16 +926,16 @@
     window.print();
   }
 
-  // ---------- product management ----------
   function renderProductTable(){
     const q = ($('#prodTableSearch').value||'').toLowerCase();
     const body = $('#productTableBody');
-    const list = products.filter(p=>p.name.toLowerCase().includes(q));
+    const list = products.filter(p=>p.name.toLowerCase().includes(q) || productCategory(p).toLowerCase().includes(q));
     $('#productsEmptyNote').style.display = products.length===0 ? 'block' : 'none';
     body.innerHTML = list.map(p=>{
       const low = p.stock<=5;
       return `<tr data-id="${p.id}">
         <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(productCategory(p))}</td>
         <td class="num">${fmt(p.price)}</td>
         <td><span class="stock-badge ${low?'low':'ok'}">${formatQty(p.stock)} ${p.unit}</span></td>
         <td>${p.unit}</td>
@@ -893,13 +967,13 @@
         p.stock += amount;
         saveProducts();
         renderProductTable();
+        renderCatFilter();
         renderProductGrid();
         toast(`Added ${formatQty(amount)} ${p.unit} — new stock: ${formatQty(p.stock)}`);
       }
     });
   }
 
-  // ---------- generic amount-entry modal (record payment / restock) ----------
   let amountModalCallback = null;
   function openAmountModal({title, subLabel, subValue, fieldLabel, onSave}){
     $('#amountModalTitle').textContent = title;
@@ -923,7 +997,6 @@
     if(cb) cb(val);
   });
 
-  // ---------- generic confirm modal (delete actions) ----------
   let confirmModalCallback = null;
   function openConfirmModal({title, body, onConfirm, confirmLabel}){
     $('#confirmModalTitle').textContent = title;
@@ -949,6 +1022,9 @@
     $('#pf-price').value = p ? p.price : '';
     $('#pf-stock').value = p ? p.stock : '';
     $('#pf-unit').value = p ? p.unit : 'pcs';
+    $('#pf-category').value = p ? (p.category || '') : '';
+    const uniqueCats = Array.from(new Set(products.map(productCategory))).sort((a,b)=>a.localeCompare(b));
+    $('#categoryList').innerHTML = uniqueCats.map(c=>`<option value="${escapeHtml(c)}">`).join('');
     $('#productModal').style.display = 'flex';
     $('#pf-name').focus();
   }
@@ -961,18 +1037,20 @@
     const price = parseFloat($('#pf-price').value);
     const stock = parseFloat($('#pf-stock').value);
     const unit = $('#pf-unit').value;
+    const category = $('#pf-category').value.trim() || 'General';
     if(!name){ toast('Enter a product name'); return; }
     if(isNaN(price) || price<0){ toast('Enter a valid price'); return; }
     if(isNaN(stock) || stock<0){ toast('Enter a valid stock quantity'); return; }
     if(editingProductId){
       const p = products.find(x=>x.id===editingProductId);
-      p.name=name; p.price=price; p.stock=stock; p.unit=unit;
+      p.name=name; p.price=price; p.stock=stock; p.unit=unit; p.category=category;
     } else {
-      products.push({id: uid(), name, price, stock, unit});
+      products.push({id: uid(), name, price, stock, unit, category});
     }
     await saveProducts();
     $('#productModal').style.display='none';
     renderProductTable();
+    renderCatFilter();
     renderProductGrid();
     toast('Product saved');
   });
@@ -987,13 +1065,13 @@
         products = products.filter(x=>x.id!==id);
         await saveProducts();
         renderProductTable();
+        renderCatFilter();
         renderProductGrid();
         toast('Product deleted');
       }
     });
   }
 
-  // ---------- history ----------
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   let openFolders = new Set();
 
@@ -1012,7 +1090,6 @@
       return;
     }
 
-    // group bills by year-month
     const groups = {};
     filtered.forEach(b=>{
       const d = new Date(b.date);
@@ -1021,7 +1098,6 @@
     });
     const monthKeys = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
 
-    // auto-expand the newest month, and any month currently open, and every month while searching
     if(openFolders.size===0 && monthKeys.length) openFolders.add(monthKeys[0]);
 
     wrap.innerHTML = monthKeys.map(key=>{
@@ -1107,7 +1183,6 @@
   }
   $('#historySearch').addEventListener('input', renderHistory);
 
-  // ---------- khata (credit ledger) ----------
   let openKhataFolders = new Set();
 
   function renderKhata(){
@@ -1237,23 +1312,21 @@
     });
   }
 
-  // ---------- App lock (6-digit PIN) ----------
   async function sha256(text){
     if(window.crypto && window.crypto.subtle && window.isSecureContext){
       try{
         const enc = new TextEncoder().encode(text);
         const buf = await crypto.subtle.digest('SHA-256', enc);
         return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-      }catch(e){ /* fall through to simple hash below */ }
+      }catch(e){ }
     }
-    // Fallback for contexts without SubtleCrypto (e.g. plain file:// pages) — good enough for local PIN gating.
     let h = 0;
     for(let i=0;i<text.length;i++){ h = (h*31 + text.charCodeAt(i)) | 0; }
     return 'fh_' + (h>>>0).toString(16);
   }
 
   let pinBuffer = '';
-  let pinStage = 'enter'; // 'enter' | 'verify-current' | 'create' | 'confirm'
+  let pinStage = 'enter';
   let firstPin = '';
   let isChangingPin = false;
 
@@ -1345,7 +1418,6 @@
       return;
     }
 
-    // pinStage === 'enter'
     const hash = await sha256(pinBuffer);
     if(hash === storedHash){
       $('#lockScreen').style.display = 'none';
@@ -1378,7 +1450,6 @@
     });
   });
 
-  // ---------- PWA: service worker + install prompt ----------
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
       navigator.serviceWorker.register('service-worker.js').catch(()=>{});
@@ -1402,7 +1473,6 @@
     toast('Counter installed');
   });
 
-  // init
   renderCart();
   loadData();
   initLock();
